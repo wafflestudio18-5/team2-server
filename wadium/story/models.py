@@ -13,4 +13,13 @@ class Story(models.Model):
     published = models.BooleanField(null=False, default=False)
     published_at = models.DateTimeField(null=True)
 
-
+class StoryBlock(models.Model):
+    BlockTypes = (
+        ('text', 'text'),
+        ('image', 'image'),
+    )
+    story = models.ForeignKey(Story, null=False, related_name='blocks', on_delete=models.CASCADE)
+    order = models.SmallIntegerField(null=False)
+    block_type = models.CharField(max_length=50, choices=BlockTypes, null=False)
+    content = models.CharField(max_length=1000, blank=True) # how about image?
+    
