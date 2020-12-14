@@ -7,7 +7,7 @@ class Story(models.Model):
     writer = models.ForeignKey(User, null=False, related_name='stories', on_delete=models.CASCADE)
     title = models.CharField(max_length=100, blank=False)
     subtitle = models.CharField(max_length=200, blank=True)
-    featured_image = models.ImageField(upload_to='/file/path/')
+    featured_image = models.PositiveSmallIntegerField(null=True) # put the order of the block that will be the feature image
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     published = models.BooleanField(null=False, default=False)
