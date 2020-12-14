@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 
 class Story(models.Model):
-    uid  = models.CharField(max_length=100, null=False)
+    uid  = models.CharField(max_length=100, null=False, unique=True)
     writer = models.ForeignKey(User, null=False, related_name='stories', on_delete=models.CASCADE)
     title = models.CharField(max_length=100, blank=False)
     subtitle = models.CharField(max_length=200, blank=True)
@@ -40,3 +40,7 @@ class StoryTag(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 class StoryRead(models.Model):
+    story = models.ForeignKey(Story, null=False, related_name='story_read', on_delete=models.CASCADE)
+    user = models.ForeignKey(User, null=False, related_name='story_read', on_delete=models.CASCADE)
+    count = models.PositiveSmallIntegerField(null=False)
+    read_at = models.DateTimeField(null=False)
