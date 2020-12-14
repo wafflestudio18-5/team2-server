@@ -21,5 +21,22 @@ class StoryBlock(models.Model):
     story = models.ForeignKey(Story, null=False, related_name='blocks', on_delete=models.CASCADE)
     order = models.SmallIntegerField(null=False)
     block_type = models.CharField(max_length=50, choices=BlockTypes, null=False)
-    content = models.CharField(max_length=1000, blank=True) # how about image?
+    content = models.TextField()
+    # for image, content should be like this: "<img src = "./img/model1.png" width="70%">"  
+
+class StoryComment(models.Model):
+    story = models.ForeignKey(Story, null=False, related_name='comments', on_delete=models.CASCADE)
+    writer = models.ForeignKey(User, null=False, related_name='comments', on_delete=models.CASCADE)
+    body = models.TextField() # is there text field
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     
+class Tag(models.Model):
+    name = models.CharField(max_length=100, blank=False, unique=True)
+
+class StoryTag(models.Model):
+    story = models.ForeignKey(Story, null=False, related_name='story_tag', on_delete=models.CASCADE)
+    tag = models.ForeignKey(Tag, null=False, related_name='story_tag', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class StoryRead(models.Model):
