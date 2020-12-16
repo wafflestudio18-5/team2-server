@@ -47,4 +47,4 @@ class StoryRead(models.Model):
     count = models.PositiveSmallIntegerField()
     read_at = models.DateTimeField()
     class Meta:
-        unique_together = ['story', 'order']
+        unique_together = ['story', 'user']
