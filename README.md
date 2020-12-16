@@ -13,6 +13,6 @@ Team 2의 Wadium은 [Medium](https://medium.com/) 을 클론합니다.
  
  ---
  
- ##Timeline
+ ## Timeline
  
  2020.11.25. wadium project 생성
