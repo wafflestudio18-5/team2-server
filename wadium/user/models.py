@@ -1,7 +1,9 @@
-from django.db import models
+from django.db import models, transaction
+from django.db.utils import IntegrityError
 from django.contrib.auth.models import User
 import secrets
 from django.utils import timezone
+from rest_framework.serializers import ValidationError
 
 
 class EmailAddress(models.Model):
@@ -16,6 +18,10 @@ class EmailAddress(models.Model):
 
     def __str__(self):
         return self.email
+
+    @property
+    def available(self):
+        return self.user is None
 
 
 def generate_token():
@@ -41,12 +47,50 @@ class EmailAuth(models.Model):
 
 
 class UserProfile(models.Model):
+    TEST_PW = 'test'
+    NORMAL_PW = 'none'
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=300)
     profile_image = models.URLField(max_length=300, blank=True)
     bio = models.CharField(max_length=140, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def email_address(self):
+        return self.user.emails.get(primary=True)
+
+    @property
+    def email(self):
+        return self.user.emails.get(primary=True).email
+
+    @classmethod
+    @transaction.atomic
+    def create_user(cls, username, userprofile, test_user=False):
+        try:
+            if test_user:
+                user = User.objects.create(username=username, password=cls.TEST_PW)
+            else:
+                user = User.objects.create(username=username, password=cls.NORMAL_PW)
+        except IntegrityError:
+            raise ValidationError({'username': 'A user with that username already exists.'})
+        email = userprofile.pop('email')
+        try:
+            email_address = EmailAddress.objects.select_for_update().get(email=email)
+        except EmailAddress.DoesNotExist:
+            try:
+                email_address = EmailAddress.objects.create(email=email, user=user, primary=True)
+            except IntegrityError:
+                raise ValidationError({'email': 'A user with that email already exists.'})
+        else:
+            if email_address.available:
+                email_address.user = user
+                email_address.primary = True
+                email_address.save()
+            else:
+                raise ValidationError({'email': 'A user with that email already exists.'})
+        cls.objects.create(user=user, **userprofile)
+        return user
 
 
 class UserSocial(models.Model):
