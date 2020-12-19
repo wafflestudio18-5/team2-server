@@ -43,8 +43,8 @@ class EmailAuth(models.Model):
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=300)
-    profile_image = models.URLField(max_length=300)
-    bio = models.CharField(max_length=140)
+    profile_image = models.URLField(max_length=300, blank=True)
+    bio = models.CharField(max_length=140, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -52,7 +52,7 @@ class UserProfile(models.Model):
 class UserSocial(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     email_address = models.OneToOneField(EmailAddress, on_delete=models.CASCADE)
-    oauth_token = models.CharField(max_length=100)  # This is unique, but no need to validate.
+    oauth_token = models.CharField(max_length=100, blank=True)  # This is unique, but no need to validate.
 
     class Meta:
         abstract = True
