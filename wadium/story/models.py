@@ -6,7 +6,7 @@ class Story(models.Model):
     uid  = models.CharField(max_length=100, unique=True)
     writer = models.ForeignKey(User, related_name='stories', on_delete=models.CASCADE)
     title = models.CharField(max_length=100, db_index=True)
-    subtitle = models.CharField(max_length=200, blank=True)
+    subtitle = models.CharField(max_length=140, blank=True)
     featured_image = models.PositiveSmallIntegerField(null=True) # put the order of the block that will be the feature image
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -20,9 +20,9 @@ class StoryBlock(models.Model):
     )
     story = models.ForeignKey(Story, related_name='blocks', on_delete=models.CASCADE)
     order = models.SmallIntegerField()
-    block_type = models.CharField(max_length=50, choices=BlockTypes)
+    block_type = models.CharField(max_length=10, choices=BlockTypes)
     content = models.TextField()
-    # for image, content should be like this: "<img src = "./img/model1.png" width="70%">"  
+    # for image, content should be like this: '<img src = "./img/model1.png" width="70%">'  
     class Meta:
         unique_together = ['story', 'order']
 
@@ -40,6 +40,8 @@ class StoryTag(models.Model):
     story = models.ForeignKey(Story, related_name='story_tag', on_delete=models.CASCADE)
     tag = models.ForeignKey(Tag, related_name='story_tag', on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        unique_together = ['story', 'tag']
 
 class StoryRead(models.Model):
     story = models.ForeignKey(Story, related_name='story_read', on_delete=models.CASCADE)
