@@ -4,6 +4,9 @@ from django.contrib.auth.models import User
 import secrets
 from django.utils import timezone
 from rest_framework.serializers import ValidationError
+from rest_framework.exceptions import AuthenticationFailed
+from .email_backend import send_access_token
+from rest_framework import status
 
 
 class EmailAddress(models.Model):
@@ -44,6 +47,37 @@ class EmailAuth(models.Model):
     @property
     def expired(self):
         return self.expires_at <= timezone.now()
+
+    def send(self, signup=False):
+        sent, at = send_access_token(self.email_address.email, signup, self.token)
+        if sent:
+            self.is_email_token = True
+            self.expires_at = timezone.now() + timezone.timedelta(hours=2)
+            self.valid = True
+            self.save()
+        return sent
+
+    def is_valid(self, must_be_email=True):
+        if not self.valid:
+            raise AuthenticationFailed({
+                'access_token': 'The access token is invalid'
+            })
+        if must_be_email and not self.is_email_token:
+            self.valid = False
+            self.save()
+            raise AuthenticationFailed({
+                'access_token': 'The access token is invalid'
+            })
+        elif self.expired:
+            self.valid = False
+            self.save()
+            raise AuthenticationFailed({
+                'access_token': 'The access token is expired'
+            })
+        else:  # valid
+            self.valid = False  # invalidated when used once
+            self.save()
+            return True
 
 
 class UserProfile(models.Model):
@@ -92,6 +126,21 @@ class UserProfile(models.Model):
                 raise ValidationError({'email': 'A user with that email already exists.'})
         cls.objects.create(user=user, **userprofile)
         return user
+
+    @classmethod
+    def get_unique_username(cls, email):
+        basename = email[:email.index('@')]
+        similar_names = [u.username for u in User.objects.filter(username__startswith=basename)]
+        postfixes = [n[n.index(basename) + len(basename):] for n in similar_names]
+        numeric_postfixes = [int(p) for p in postfixes if p.isdecimal()]
+        if numeric_postfixes:
+            postfix = max(numeric_postfixes) + 1
+            return basename + str(postfix)
+        elif postfixes:
+            postfix = 1
+            return basename + str(postfix)
+        else:
+            return basename
 
 
 class UserSocial(models.Model):
