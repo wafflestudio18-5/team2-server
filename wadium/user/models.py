@@ -74,6 +74,7 @@ class UserProfile(models.Model):
                 user = User.objects.create(username=username, password=cls.NORMAL_PW)
         except IntegrityError:
             raise ValidationError({'username': 'A user with that username already exists.'})
+        userprofile = userprofile.copy()
         email = userprofile.pop('email')
         try:
             email_address = EmailAddress.objects.select_for_update().get(email=email)
