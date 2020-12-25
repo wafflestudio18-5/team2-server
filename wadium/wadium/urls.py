@@ -23,7 +23,11 @@ from .views import ping
 urlpatterns = [
     path('', ping),
     path('admin/', admin.site.urls),
+<<<<<<< HEAD
     path('', include('user.urls')),
+=======
+    path('', include('story.urls')),
+>>>>>>> 0d5cf46... Add story url
 ]
 
 if settings.DEBUG_TOOLBAR:
