@@ -16,6 +16,11 @@ class StoryViewSet(viewsets.GenericViewSet):
     serializer_class = StorySerializer
     permission_classes = (IsAuthenticated(), )
 
+    def get_permissions(self):
+        if self.action in ('retrieve', 'get'):
+            return (AllowAny(), )
+        return self.permission_classes
+
     def create(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -28,3 +33,10 @@ class StoryViewSet(viewsets.GenericViewSet):
         serializer = serializer.is_valid(raise_exception=True)
         serializer.update(story, serializer.validated_data)
         return Response(serializer.data)
+
+    def retrieve(self, request, pk=None):
+        story = self.get_object()
+        return Response(self.get_serializer(story).data)
+    
+    def get(self, request):
+        return None
