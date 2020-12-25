@@ -23,6 +23,7 @@ from .views import ping
 urlpatterns = [
     path('', ping),
     path('admin/', admin.site.urls),
+    path('', include('user.urls')),
 ]
 
 if settings.DEBUG_TOOLBAR:
