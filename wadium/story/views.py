@@ -29,8 +29,10 @@ class StoryViewSet(viewsets.GenericViewSet):
 
     def update(self, request, pk=None):
         story = self.get_object()
-        serializer = self.get_serializer(story, data=request.data)
-        serializer = serializer.is_valid(raise_exception=True)
+        if story.writer != request.user:
+            return Response({'error':"You can't edit others' story"}, status=status.HTTP_403_FORBIDDEN)
+        serializer = self.get_serializer(story, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
         serializer.update(story, serializer.validated_data)
         return Response(serializer.data)
 
@@ -40,3 +42,22 @@ class StoryViewSet(viewsets.GenericViewSet):
     
     def get(self, request):
         return None
+
+    @action(methods=['POST'], detail=True)
+    def publish(self, request, pk=None):
+        story = self.get_object()
+        if story.published:
+            return Response({'error':"This story is already published"}, status=status.HTTP_400_BAD_REQUEST)
+        if story.writer != request.user:
+            return Response({'error':"You can't edit others' story"}, status=status.HTTP_403_FORBIDDEN)
+        story.published_at = timezone.now()
+        story.published = True
+        story.save()
+        return Response(self.get_serializer(story).data)
+
+    def destroy(self, request, pk=None):
+        story = self.get_object()
+        if story.writer != request.user:
+            return Response({'error':"You can't edit others' story"}, status=status.HTTP_403_FORBIDDEN)
+        story.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
