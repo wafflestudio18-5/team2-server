@@ -4,7 +4,7 @@ from django.utils import timezone
 import secrets
 
 def generate_uid():
-    return secrets.token_hex(12)
+    return secrets.token_hex(6)
 
 class Story(models.Model):
     uid  = models.CharField(max_length=100, unique=True, default=generate_uid)
@@ -18,9 +18,11 @@ class Story(models.Model):
     published_at = models.DateTimeField(null=True)
 
 class StoryBlock(models.Model):
+    TEXT = 'text'
+    IMAGE = 'image'
     BlockTypes = (
-        ('text', 'text'),
-        ('image', 'image'),
+        (TEXT, 'text'),
+        (IMAGE, 'image'),
     )
     story = models.ForeignKey(Story, related_name='blocks', on_delete=models.CASCADE)
     order = models.SmallIntegerField()
