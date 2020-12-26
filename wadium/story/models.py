@@ -1,3 +1,58 @@
 from django.db import models
+from django.contrib.auth.models import User
+from django.utils import timezone
+import secrets
 
-# Create your models here.
+def generate_uid():
+    return secrets.token_hex(6)
+
+class Story(models.Model):
+    uid  = models.CharField(max_length=100, unique=True, default=generate_uid)
+    writer = models.ForeignKey(User, related_name='stories', on_delete=models.CASCADE)
+    title = models.CharField(max_length=100, db_index=True)
+    subtitle = models.CharField(max_length=140, blank=True)
+    featured_image = models.PositiveSmallIntegerField(null=True) # put the order of the block that will be the feature image
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    published = models.BooleanField(default=False)
+    published_at = models.DateTimeField(null=True)
+
+class StoryBlock(models.Model):
+    TEXT = 'text'
+    IMAGE = 'image'
+    BlockTypes = (
+        (TEXT, 'text'),
+        (IMAGE, 'image'),
+    )
+    story = models.ForeignKey(Story, related_name='blocks', on_delete=models.CASCADE)
+    order = models.SmallIntegerField()
+    block_type = models.CharField(max_length=10, choices=BlockTypes, default='text')
+    content = models.TextField()
+    # for image, content should be like this: '<img src = "./img/model1.png" width="70%">'  
+    class Meta:
+        unique_together = ['story', 'order']
+
+class StoryComment(models.Model):
+    story = models.ForeignKey(Story, related_name='comments', on_delete=models.CASCADE)
+    writer = models.ForeignKey(User, related_name='comments', on_delete=models.CASCADE)
+    body = models.TextField() # is there text field
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+class Tag(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+class StoryTag(models.Model):
+    story = models.ForeignKey(Story, related_name='story_tag', on_delete=models.CASCADE)
+    tag = models.ForeignKey(Tag, related_name='story_tag', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        unique_together = ['story', 'tag']
+
+class StoryRead(models.Model):
+    story = models.ForeignKey(Story, related_name='story_read', on_delete=models.CASCADE)
+    user = models.ForeignKey(User, related_name='story_read', on_delete=models.CASCADE)
+    count = models.PositiveSmallIntegerField()
+    read_at = models.DateTimeField()
+    class Meta:
+        unique_together = ['story', 'user']

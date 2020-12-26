@@ -1,8 +1,10 @@
-from django.db import models
+from django.db import models, transaction
+from django.db.utils import IntegrityError
+from django.contrib.auth.models import User
+import secrets
+from django.utils import timezone
+from rest_framework.serializers import ValidationError
 
-<<<<<<< Updated upstream
-# Create your models here.
-=======
 
 class EmailAddress(models.Model):
     email = models.EmailField(primary_key=True)
@@ -107,4 +109,4 @@ class UserGoogle(UserSocial):
 
 class UserFacebook(UserSocial):
     facebook_id = models.CharField(max_length=100, unique=True)
->>>>>>> Stashed changes
+

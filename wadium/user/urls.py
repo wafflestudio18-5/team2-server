@@ -9,4 +9,3 @@ router.register('user', UserViewSet, basename='user')  # /user/
 
 urlpatterns = [
     path('', include(router.urls)),
-]
