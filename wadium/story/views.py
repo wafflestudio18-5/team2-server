@@ -40,7 +40,7 @@ class StoryViewSet(viewsets.GenericViewSet):
         story = self.get_object()
         return Response(self.get_serializer(story).data)
     
-    def get(self, request):
+    def list(self, request):
         return None
 
     @action(methods=['POST'], detail=True)
