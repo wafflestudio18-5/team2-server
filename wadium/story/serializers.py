@@ -9,8 +9,8 @@ class StorySerializer(serializers.ModelSerializer):
     title = serializers.CharField(default='Untitled', allow_blank=True)
     subtitle = serializers.SerializerMethodField()
     updated_at = serializers.DateTimeField(read_only=True)
-    published_at = serializers.DateTimeField(allow_null=True, default=None)
-    published = serializers.BooleanField(default=False)
+    published_at = serializers.DateTimeField(allow_null=True, default=None, read_only=True)
+    published = serializers.BooleanField(default=False, read_only=True)
     blocks = serializers.SerializerMethodField(required=False, allow_null=True)
     created_at = serializers.DateTimeField(read_only=True)
 
