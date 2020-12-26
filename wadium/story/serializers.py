@@ -47,17 +47,18 @@ class StorySerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         story = super(StorySerializer, self).update(instance, validated_data)
-        blocks = self.context['request'].data['blocks']
-        for block in blocks:
-            try:
-                block_to_update = StoryBlock.objects.get(story=story, order=block['order'])
-                if 'content' in block:
-                    block_to_update.content = block['content']
-                if 'block_type' in block:
-                    block_to_update.block_type = block['block_type']
-                block_to_update.save()
-            except StoryBlock.DoesNotExist:
-                StoryBlock.objects.create(story=story, order=block['order'], content=block['content'], block_type=block['block_type'])
+        if 'blocks' in self.context['request'].data:
+            blocks = self.context['request'].data['blocks']
+            for block in blocks:
+                try:
+                    block_to_update = StoryBlock.objects.get(story=story, order=block['order'])
+                    if 'content' in block:
+                        block_to_update.content = block['content']
+                    if 'block_type' in block:
+                        block_to_update.block_type = block['block_type']
+                    block_to_update.save()
+                except StoryBlock.DoesNotExist:
+                    StoryBlock.objects.create(story=story, order=block['order'], content=block['content'], block_type=block['block_type'])
 
         return story
 
@@ -70,10 +71,13 @@ class StorySerializer(serializers.ModelSerializer):
             subtitle = data['subtitle']
             if subtitle == '':
                 if 'blocks' in data:
-                    first_block = story.blocks.filter(block_type='text').first()
-                    subtitle = first_block.content # 140자로 잘라야 함
-                    story.subtitle = subtitle
-                    story.save()
+                    try:
+                        first_block = story.blocks.filter(block_type='text').first()
+                        subtitle = first_block.content # 140자로 잘라야 함
+                        story.subtitle = subtitle
+                        story.save()
+                    except StoryBlock.DoesNotExist:
+                        pass
         else:
             subtitle = story.subtitle
         return subtitle
