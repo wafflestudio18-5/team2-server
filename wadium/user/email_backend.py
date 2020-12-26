@@ -11,7 +11,7 @@ def send_access_token(email, signup=False, token=None):
             'Messages': [
                 {
                     "From": {
-                        "Email": "noreply@waffle-sanggyu.tk",
+                        "Email": "noreply@wadium.shop",
                         "Name": "Wadium"
                     },
                     "To": [
@@ -34,7 +34,7 @@ def send_access_token(email, signup=False, token=None):
             'Messages': [
                 {
                     "From": {
-                        "Email": "noreply@waffle-sanggyu.tk",
+                        "Email": "noreply@wadium.shop",
                         "Name": "Wadium"
                     },
                     "To": [
