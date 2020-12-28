@@ -99,3 +99,20 @@ class UserLoginSerializer(serializers.ModelSerializer):
                     })
         else:
             raise NotImplementedError()
+
+class UserUpdateSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source='userprofile.name')
+    bio = serializers.CharField(source='userprofile.bio',required=False)
+    profile_image = serializers.URLField(source='userprofile.profile_image', required=False)
+    email = serializers.CharField(source='userprofile.user.email')
+    # connection =  serializers.SerializerMethodField()
+    class Meta:
+        model = UserProfile
+        fields = (
+            'id',
+            'name',
+            'bio',
+            'profile_image',
+            'email',
+            #'connection'
+        )
