@@ -130,17 +130,13 @@ class UserProfile(models.Model):
     @classmethod
     def get_unique_username(cls, email):
         basename = email[:email.index('@')]
-        similar_names = [u.username for u in User.objects.filter(username__startswith=basename)]
-        postfixes = [n[n.index(basename) + len(basename):] for n in similar_names]
-        numeric_postfixes = [int(p) for p in postfixes if p.isdecimal()]
-        if numeric_postfixes:
-            postfix = max(numeric_postfixes) + 1
-            return basename + str(postfix)
-        elif postfixes:
-            postfix = 1
-            return basename + str(postfix)
-        else:
+        similar_names = {u.username for u in User.objects.filter(username__startswith=basename)}
+        if basename not in similar_names:
             return basename
+        postfixes = {n[len(basename):] for n in similar_names}
+        for postfix in map(str, range(len(postfixes) + 1)):
+            if postfix not in postfixes:
+                return basename + postfix
 
 
 class UserSocial(models.Model):

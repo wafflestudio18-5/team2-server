@@ -38,7 +38,8 @@ class UserViewSet(viewsets.GenericViewSet):
                 email_auth.is_valid(must_be_email=True)
                 email_address = email_auth.email_address
                 if not email_address.available:
-                    return Response({'error': 'Associated email address is not available'})
+                    return Response({'error': 'Associated email address is not available'},
+                                    status=status.HTTP_400_BAD_REQUEST)
                 new_token = EmailAuth.objects.create(
                     email_address=email_address,
                     expires_at=timezone.now() + timezone.timedelta(minutes=10),
