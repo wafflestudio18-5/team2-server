@@ -53,14 +53,14 @@ class UserSerializer(serializers.ModelSerializer):
             if 'username' not in data:
                 raise serializers.ValidationError('username is required')
             required = {'name', 'email'}
-            missing = required - set(data['userprofile'])
+            missing = required - set(data.get('userprofile', {}))
             if missing:
                 raise serializers.ValidationError(f'{missing} is required')
         elif data['auth_type'] == self.EMAIL:
             if 'req_type' not in data:
                 raise serializers.ValidationError('req_type is required')
             req_type = data['req_type']
-            if req_type == self.INIT and 'email' not in data['userprofile']:
+            if req_type == self.INIT and 'email' not in data.get('userprofile', {}):
                 raise serializers.ValidationError('email is required')
             elif req_type == self.CHECK and 'access_token' not in data:
                 raise serializers.ValidationError('access_token is required')
@@ -70,7 +70,7 @@ class UserSerializer(serializers.ModelSerializer):
                 if 'username' not in data:
                     raise serializers.ValidationError('username is required')
                 required = {'name', 'email'}
-                missing = required - set(data['userprofile'])
+                missing = required - set(data.get('userprofile', {}))
                 if missing:
                     raise serializers.ValidationError(f'{missing} is required')
         return data

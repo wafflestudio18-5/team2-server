@@ -53,8 +53,10 @@ def send_access_token(email, signup=False, token=None):
             ]
         }
     result = mailjet.send.create(data=data)
-    if result.json()['Messages'][0]['Status'] == 'success':
-        time = datetime.strptime(result.headers['date'], '%a, %d %b %Y %H:%M:%S %Z')
-        return True, time
-    else:
-        return False, None
+    try:
+        if result.json()['Messages'][0]['Status'] == 'success':
+            time = datetime.strptime(result.headers['date'], '%a, %d %b %Y %H:%M:%S %Z')
+            return True, time
+    except KeyError:
+        pass
+    return False, None
