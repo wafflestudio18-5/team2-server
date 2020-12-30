@@ -17,7 +17,7 @@ class StoryViewSet(viewsets.GenericViewSet):
     permission_classes = (IsAuthenticated(), )
 
     def get_permissions(self):
-        if self.action in ('retrieve', 'get'):
+        if self.action in ('retrieve', 'list'):
             return (AllowAny(), )
         return self.permission_classes
 
