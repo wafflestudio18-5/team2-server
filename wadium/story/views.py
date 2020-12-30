@@ -41,7 +41,7 @@ class StoryViewSet(viewsets.GenericViewSet):
         return Response(self.get_serializer(story).data)
     
     def list(self, request):
-        return None
+        return Response(status=status.HTTP_501_NOT_IMPLEMENTED)
 
     @action(methods=['POST'], detail=True)
     def publish(self, request, pk=None):
