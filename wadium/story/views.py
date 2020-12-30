@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from django.utils import timezone
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
-from .models import Story, StoryBlock, StoryComment, StoryRead, StoryTag
+from .models import Story, StoryComment, StoryRead, StoryTag
 from .serializers import StorySerializer
 
 class StoryViewSet(viewsets.GenericViewSet):
