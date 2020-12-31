@@ -10,7 +10,7 @@ class Story(models.Model):
     title = models.CharField(max_length=100, db_index=True)
     subtitle = models.CharField(max_length=140, blank=True)
     body = models.JSONField(default=default_body)
-    featured_image = models.URLField(null=True)
+    featured_image = models.URLField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     published = models.BooleanField(default=False)

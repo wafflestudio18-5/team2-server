@@ -1,12 +1,13 @@
 from rest_framework import serializers
 from .models import Story
+from user.serializers import UserSerializer
 
 class StorySerializer(serializers.ModelSerializer):
-    writer = serializers.IntegerField(source='writer.id', read_only=True)
+    writer = UserSerializer(read_only=True)
     title = serializers.CharField(default='Untitled', allow_blank=True)
     subtitle = serializers.CharField()
     body = serializers.JSONField()
-    featured_image = serializers.URLField(allow_null=True)
+    featured_image = serializers.URLField(allow_blank=True)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
     published = serializers.BooleanField(default=False, read_only=True)
@@ -15,7 +16,16 @@ class StorySerializer(serializers.ModelSerializer):
     class Meta: 
         model = Story
         fields = (
-            '__all__'
+            'id',
+            'writer',
+            'title',
+            'subtitle',
+            'body',
+            'featured_image',
+            'created_at',
+            'updated_at',
+            'published',
+            'published_at',
         )
         
     def validate(self, data):
