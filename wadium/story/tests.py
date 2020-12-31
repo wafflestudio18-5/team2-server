@@ -6,3 +6,7 @@ import datetime
 from rest_framework.authtoken.models import Token
 from rest_framework import status
 import json
+
+class PostStoryTestCase(SimpleTestCase):
+    def setUp(self):
+        return 
