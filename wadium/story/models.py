@@ -2,14 +2,12 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 
-def default_body():
-    return {'content': ''}
 
 class Story(models.Model):
     writer = models.ForeignKey(User, related_name='stories', on_delete=models.CASCADE)
     title = models.CharField(max_length=100, db_index=True)
     subtitle = models.CharField(max_length=140, blank=True)
-    body = models.JSONField(default=default_body)
+    body = models.JSONField(default=list)
     featured_image = models.URLField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
