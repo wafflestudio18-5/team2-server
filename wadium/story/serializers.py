@@ -4,8 +4,9 @@ from user.serializers import UserSerializer
 
 class StorySerializer(serializers.ModelSerializer):
     writer = UserSerializer(read_only=True)
-    title = serializers.CharField(max_length=100, default='Untitled', allow_blank=True)
-    body = serializers.JSONField(required=False)
+    title = serializers.CharField(max_length=100, allow_blank=True)
+    subtitle = serializers.CharField(max_length=140, allow_blank=True)
+    body = serializers.JSONField()
     featured_image = serializers.URLField(allow_blank=True)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
