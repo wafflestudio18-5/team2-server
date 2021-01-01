@@ -3,7 +3,7 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
 from rest_framework.exceptions import NotFound, PermissionDenied
 
-from .models import UserProfile, EmailAddress
+from .models import UserProfile, EmailAddress, UserSocial, UserGoogle, UserFacebook
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -100,19 +100,40 @@ class UserLoginSerializer(serializers.ModelSerializer):
         else:
             raise NotImplementedError()
 
-class UserUpdateSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(source='userprofile.name')
-    bio = serializers.CharField(source='userprofile.bio',required=False)
-    profile_image = serializers.URLField(source='userprofile.profile_image', required=False)
-    email = serializers.CharField(source='userprofile.user.email')
-    # connection =  serializers.SerializerMethodField()
+#자신의 정보 확인/수정
+class UserSelfSerializer(serializers.ModelSerializer):
+    name = serializers.CharField()
+    bio = serializers.CharField(required=False)
+    profile_image = serializers.URLField(required=False)
+    email = serializers.CharField()
+    connection = serializers.SerializerMethodField()
     class Meta:
         model = UserProfile
         fields = (
-            'id',
             'name',
             'bio',
             'profile_image',
             'email',
-            #'connection'
+            'connection'
         )
+    def get_connection(self, user):
+        return UserSocialSerializer(user, context=self.context).data
+
+class UserSocialSerializer(serializers.ModelSerializer):
+    #google = serializers.SerializerMethodField()
+    #facebook = serializers.SerializerMethodField()
+    google = serializers.CharField(source='user.usergoogle.google_sub', required=False)
+    facebook = serializers.CharField(source='user.userfacebook.facebook_sub', required=False)
+    class Meta:
+        model = User
+        fields = (
+            'google',
+            'facebook',
+        )
+
+#    def get_google(self, user):
+#        return UserGoogle.objects.filter(user=user.user).last()
+
+#    def get_facebook(self, user):
+#        return UserFacebook.objects.filter(user=user.user).last()
+
