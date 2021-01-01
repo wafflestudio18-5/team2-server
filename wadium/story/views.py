@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from django.utils import timezone
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
-from .models import Story, StoryBlock, StoryComment, StoryRead, StoryTag
+from .models import Story, StoryComment, StoryRead, StoryTag
 from .serializers import StorySerializer
 
 class StoryViewSet(viewsets.GenericViewSet):
@@ -17,7 +17,7 @@ class StoryViewSet(viewsets.GenericViewSet):
     permission_classes = (IsAuthenticated(), )
 
     def get_permissions(self):
-        if self.action in ('retrieve', 'get'):
+        if self.action in ('retrieve', 'list'):
             return (AllowAny(), )
         return self.permission_classes
 
@@ -41,7 +41,7 @@ class StoryViewSet(viewsets.GenericViewSet):
         return Response(self.get_serializer(story).data)
     
     def list(self, request):
-        return None
+        return Response(status=status.HTTP_501_NOT_IMPLEMENTED)
 
     @action(methods=['POST'], detail=True)
     def publish(self, request, pk=None):

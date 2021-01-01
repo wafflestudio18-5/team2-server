@@ -58,3 +58,5 @@ jobs:
         working-directory: ./wadium
         env:
           DJANGO_SETTINGS_MODULE: wadium.test_settings
+          MAILJET_API_KEY: ${{ secrets.MAILJET_API_KEY }}
+          MAILJET_API_SECRET: ${{ secrets.MAILJET_API_SECRET }}
