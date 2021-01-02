@@ -51,6 +51,7 @@ class StoryViewSet(viewsets.GenericViewSet):
     def list(self, request):
         queryset = self.get_queryset(). \
             filter(published=True). \
+            filter(main_order=None, trending_order=None). \
             order_by('-published_at'). \
             defer('body'). \
             select_related('writer'). \

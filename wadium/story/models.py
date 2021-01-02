@@ -12,6 +12,8 @@ class Story(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     published = models.BooleanField(default=False)
     published_at = models.DateTimeField(null=True)
+    main_order = models.PositiveSmallIntegerField(null=True)
+    trending_order = models.PositiveSmallIntegerField(null=True)
 
 
 class StoryComment(models.Model):
