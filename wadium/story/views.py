@@ -20,12 +20,12 @@ class StoryViewSet(viewsets.GenericViewSet):
     cache_timeout = 60
 
     def get_serializer_class(self):
-        if self.action in ('list',):
+        if self.action in ('list', 'main', 'trending'):
             return SimpleStorySerializer
         return self.serializer_class
 
     def get_permissions(self):
-        if self.action in ('retrieve', 'list'):
+        if self.action in ('retrieve', 'list', 'main', 'trending'):
             return (AllowAny(),)
         return self.permission_classes
 
@@ -83,6 +83,28 @@ class StoryViewSet(viewsets.GenericViewSet):
         serializer = self.get_serializer(page, many=True)
 
         return self.get_paginated_response(serializer.data)
+
+    @action(methods=['GET'], detail=False)
+    def main(self, request):
+        queryset = self.get_queryset(). \
+            filter(published=True). \
+            filter(main_order__gte=1, main_order__lte=5). \
+            order_by('main_order'). \
+            defer('body'). \
+            select_related('writer'). \
+            prefetch_related('writer__userprofile')
+        return Response(self.get_serializer(queryset, many=True).data)
+
+    @action(methods=['GET'], detail=False)
+    def trending(self, request):
+        queryset = self.get_queryset(). \
+            filter(published=True). \
+            filter(trending_order__gte=1, trending_order__lte=6). \
+            order_by('trending_order'). \
+            defer('body'). \
+            select_related('writer'). \
+            prefetch_related('writer__userprofile')
+        return Response(self.get_serializer(queryset, many=True).data)
 
     @action(methods=['POST'], detail=True)
     def publish(self, request, pk=None):
