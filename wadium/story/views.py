@@ -63,16 +63,19 @@ class StoryViewSet(viewsets.GenericViewSet):
         if 'tag' in request.query_params:
             return Response({'error': 'tag query is not implemented'}, status=status.HTTP_501_NOT_IMPLEMENTED)
             # is_cacheable = False
-        if is_cacheable and request.query_params.get('page', 1) == 1:
+        if is_cacheable and request.query_params.get('page', 1) in (1, '1'):
             cached_data = cache.get(self.cache_story_page1_key)
             if cached_data is None:
                 page = self.paginate_queryset(queryset)
                 assert page is not None
-                data = self.get_serializer(page, many=True).data
+                serializer = self.get_serializer(page, many=True)
+                response = self.get_paginated_response(serializer.data)
+                data = response.data
                 cache.set(self.cache_story_page1_key, data, timeout=self.cache_timeout)
+                return response
             else:
                 data = cached_data
-            return Response(data)
+                return Response(data)
 
         page = self.paginate_queryset(queryset)
         assert page is not None
