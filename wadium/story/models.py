@@ -12,8 +12,11 @@ class Story(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     published = models.BooleanField(default=False)
     published_at = models.DateTimeField(null=True)
-    main_order = models.PositiveSmallIntegerField(null=True)
-    trending_order = models.PositiveSmallIntegerField(null=True)
+    MAIN_ORDER_CHOICES = list(zip(range(1, 6), map(str, range(1, 6))))
+    TRENDING_ORDER_CHOICES = list(zip(range(1, 7), map(str, range(1, 7))))
+    main_order = models.PositiveSmallIntegerField(null=True, blank=True, choices=MAIN_ORDER_CHOICES)
+    trending_order = models.PositiveSmallIntegerField(null=True, blank=True, choices=TRENDING_ORDER_CHOICES)
+    # blank set to integer fields to pass validation in admin site
 
 
 class StoryComment(models.Model):
