@@ -1,12 +1,9 @@
-from django.shortcuts import render
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.models import User
-from django.db import IntegrityError
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from django.core.cache import cache
 
 from .models import Story, StoryComment, StoryRead, StoryTag
 from .serializers import StorySerializer, SimpleStorySerializer
@@ -18,6 +15,9 @@ class StoryViewSet(viewsets.GenericViewSet):
     serializer_class = StorySerializer
     permission_classes = (IsAuthenticated(),)
     pagination_class = StoryPagination
+
+    cache_story_page1_key = 'story:list-1'
+    cache_timeout = 60
 
     def get_serializer_class(self):
         if self.action in ('list',):
@@ -51,6 +51,7 @@ class StoryViewSet(viewsets.GenericViewSet):
     def list(self, request):
         queryset = self.get_queryset().\
             filter(published=True).\
+            order_by('-published_at').\
             defer('body').\
             select_related('writer').\
             prefetch_related('writer__userprofile')
@@ -63,11 +64,20 @@ class StoryViewSet(viewsets.GenericViewSet):
             return Response({'error': 'tag query is not implemented'}, status=status.HTTP_501_NOT_IMPLEMENTED)
             # is_cacheable = False
         if is_cacheable and request.query_params.get('page', 1) == 1:
-            # Use caching
-            pass
+            cached_data = cache.get(self.cache_story_page1_key)
+            if cached_data is None:
+                page = self.paginate_queryset(queryset)
+                assert page is not None
+                data = self.get_serializer(page, many=True).data
+                cache.set(self.cache_story_page1_key, data, timeout=self.cache_timeout)
+            else:
+                data = cached_data
+            return Response(data)
+
         page = self.paginate_queryset(queryset)
         assert page is not None
         serializer = self.get_serializer(page, many=True)
+
         return self.get_paginated_response(serializer.data)
 
     @action(methods=['POST'], detail=True)
