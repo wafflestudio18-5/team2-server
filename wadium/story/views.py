@@ -51,7 +51,6 @@ class StoryViewSet(viewsets.GenericViewSet):
     def list(self, request):
         queryset = self.get_queryset(). \
             filter(published=True). \
-            filter(main_order=None, trending_order=None). \
             order_by('-published_at'). \
             defer('body'). \
             select_related('writer'). \
@@ -64,6 +63,8 @@ class StoryViewSet(viewsets.GenericViewSet):
         if 'tag' in request.query_params:
             return Response({'error': 'tag query is not implemented'}, status=status.HTTP_501_NOT_IMPLEMENTED)
             # is_cacheable = False
+        if is_cacheable:
+            queryset = queryset.filter(main_order=None, trending_order=None)
         if is_cacheable and request.query_params.get('page', 1) in (1, '1'):
             cached_data = cache.get(self.cache_story_page1_key)
             if cached_data is None:
