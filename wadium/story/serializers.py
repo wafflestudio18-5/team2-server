@@ -48,3 +48,20 @@ class StorySerializer(serializers.ModelSerializer):
 
         story = super(StorySerializer, self).update(instance, validated_data)
         return story
+
+
+class SimpleStorySerializer(serializers.ModelSerializer):
+    writer = UserSerializer(read_only=True)
+
+    class Meta:
+        model = Story
+        fields = (
+            'id',
+            'writer',
+            'title',
+            'subtitle',
+            'featured_image',
+            'created_at',
+            'published_at',
+        )
+        read_only_fields = fields
