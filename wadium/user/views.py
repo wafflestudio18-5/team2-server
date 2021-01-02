@@ -96,3 +96,7 @@ class UserViewSet(viewsets.GenericViewSet):
     def logout(self, request):
         logout(request)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=['GET'])
+    def story(self, request, pk=None):
+        return Response(status=status.HTTP_501_NOT_IMPLEMENTED)
