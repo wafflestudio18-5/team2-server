@@ -49,11 +49,11 @@ class StoryViewSet(viewsets.GenericViewSet):
         return Response(self.get_serializer(story).data)
 
     def list(self, request):
-        queryset = self.get_queryset().\
-            filter(published=True).\
-            order_by('-published_at').\
-            defer('body').\
-            select_related('writer').\
+        queryset = self.get_queryset(). \
+            filter(published=True). \
+            order_by('-published_at'). \
+            defer('body'). \
+            select_related('writer'). \
             prefetch_related('writer__userprofile')
         is_cacheable = True
         if 'title' in request.query_params:
