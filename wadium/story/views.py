@@ -9,13 +9,20 @@ from django.utils import timezone
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from .models import Story, StoryComment, StoryRead, StoryTag
-from .serializers import StorySerializer
+from .serializers import StorySerializer, SimpleStorySerializer
+from .paginators import StoryPagination
 
 
 class StoryViewSet(viewsets.GenericViewSet):
     queryset = Story.objects.all()
     serializer_class = StorySerializer
     permission_classes = (IsAuthenticated(),)
+    pagination_class = StoryPagination
+
+    def get_serializer_class(self):
+        if self.action in ('list',):
+            return SimpleStorySerializer
+        return self.serializer_class
 
     def get_permissions(self):
         if self.action in ('retrieve', 'list'):
@@ -42,7 +49,26 @@ class StoryViewSet(viewsets.GenericViewSet):
         return Response(self.get_serializer(story).data)
 
     def list(self, request):
-        return Response(status=status.HTTP_501_NOT_IMPLEMENTED)
+        queryset = self.get_queryset().\
+            filter(published=True).\
+            defer('body').\
+            select_related('writer').\
+            prefetch_related('writer__userprofile')
+        is_cacheable = True
+        if 'title' in request.query_params:
+            title = request.query_params.get('title')
+            queryset = queryset.filter(title__icontains=title)
+            is_cacheable = False
+        if 'tag' in request.query_params:
+            return Response({'error': 'tag query is not implemented'}, status=status.HTTP_501_NOT_IMPLEMENTED)
+            # is_cacheable = False
+        if is_cacheable and request.query_params.get('page', 1) == 1:
+            # Use caching
+            pass
+        page = self.paginate_queryset(queryset)
+        assert page is not None
+        serializer = self.get_serializer(page, many=True)
+        return self.get_paginated_response(serializer.data)
 
     @action(methods=['POST'], detail=True)
     def publish(self, request, pk=None):
