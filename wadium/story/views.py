@@ -11,14 +11,15 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import Story, StoryComment, StoryRead, StoryTag
 from .serializers import StorySerializer
 
+
 class StoryViewSet(viewsets.GenericViewSet):
     queryset = Story.objects.all()
     serializer_class = StorySerializer
-    permission_classes = (IsAuthenticated(), )
+    permission_classes = (IsAuthenticated(),)
 
     def get_permissions(self):
         if self.action in ('retrieve', 'list'):
-            return (AllowAny(), )
+            return (AllowAny(),)
         return self.permission_classes
 
     def create(self, request):
@@ -30,7 +31,7 @@ class StoryViewSet(viewsets.GenericViewSet):
     def update(self, request, pk=None):
         story = self.get_object()
         if story.writer != request.user:
-            return Response({'error':"You can't edit others' story"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': "You can't edit others' story"}, status=status.HTTP_403_FORBIDDEN)
         serializer = self.get_serializer(story, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.update(story, serializer.validated_data)
@@ -39,7 +40,7 @@ class StoryViewSet(viewsets.GenericViewSet):
     def retrieve(self, request, pk=None):
         story = self.get_object()
         return Response(self.get_serializer(story).data)
-    
+
     def list(self, request):
         return Response(status=status.HTTP_501_NOT_IMPLEMENTED)
 
@@ -47,7 +48,7 @@ class StoryViewSet(viewsets.GenericViewSet):
     def publish(self, request, pk=None):
         story = self.get_object()
         if story.writer != request.user:
-            return Response({'error':"You can't publish others' story"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': "You can't publish others' story"}, status=status.HTTP_403_FORBIDDEN)
         if story.published:
             story.published_at = None
             story.published = False
@@ -60,6 +61,6 @@ class StoryViewSet(viewsets.GenericViewSet):
     def destroy(self, request, pk=None):
         story = self.get_object()
         if story.writer != request.user:
-            return Response({'error':"You can't delete others' story"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': "You can't delete others' story"}, status=status.HTTP_403_FORBIDDEN)
         story.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
