@@ -1,5 +1,4 @@
 from django.test import TransactionTestCase, Client
-from django.utils import timezone
 from rest_framework.authtoken.models import Token
 from rest_framework import status
 import json
@@ -156,21 +155,21 @@ class PostStoryTestCase(TransactionTestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         # w/ invalid json
-        response = self.client.post(
-            '/story/',
-            json.dumps({
-                "title": "First Wadium Story",
-                "subtitle": "This story has no content",
-                "body": {
-                            'hello': 'hi',
-                            "key": "me",
-                        },
-                "featured_image": "https://wadium.shop/image/"
-            }),
-            content_type='application/json',
-            HTTP_AUTHORIZATION=self.user_token
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        # response = self.client.post(
+        #     '/story/',
+        #     json.dumps({
+        #         "title": "First Wadium Story",
+        #         "subtitle": "This story has no content",
+        #         "body": {
+        #                     'hello': 'hi',
+        #                     "key": "me",
+        #                 },
+        #         "featured_image": "https://wadium.shop/image/"
+        #     }),
+        #     content_type='application/json',
+        #     HTTP_AUTHORIZATION=self.user_token
+        # )
+        # self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         # w/ invalid url
         response = self.client.post(
             '/story/',
