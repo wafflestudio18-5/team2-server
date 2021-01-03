@@ -177,7 +177,7 @@ class UserSelfSerializer(serializers.ModelSerializer):
     name = serializers.CharField()
     bio = serializers.CharField(required=False)
     profile_image = serializers.URLField(required=False)
-    email = serializers.CharField()
+    email = serializers.CharField(read_only=True)
     connection = serializers.SerializerMethodField()
     class Meta:
         model = UserProfile
@@ -189,11 +189,10 @@ class UserSelfSerializer(serializers.ModelSerializer):
             'connection'
         )
     def get_connection(self, user):
+        print(self.context)
         return UserSocialSerializer(user, context=self.context).data
 
 class UserSocialSerializer(serializers.ModelSerializer):
-    #google = serializers.SerializerMethodField()
-    #facebook = serializers.SerializerMethodField()
     google = serializers.CharField(source='user.usergoogle.google_sub', required=False)
     facebook = serializers.CharField(source='user.userfacebook.facebook_sub', required=False)
     class Meta:
@@ -202,10 +201,3 @@ class UserSocialSerializer(serializers.ModelSerializer):
             'google',
             'facebook',
         )
-
-#    def get_google(self, user):
-#        return UserGoogle.objects.filter(user=user.user).last()
-
-#    def get_facebook(self, user):
-#        return UserFacebook.objects.filter(user=user.user).last()
-

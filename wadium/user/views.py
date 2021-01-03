@@ -99,7 +99,7 @@ class UserViewSet(viewsets.GenericViewSet):
 
     def list(self, request):
         username = request.query_params.get('username')
-        users = users.select_related('userprofile').prefetch_related('emails')
+        users = users.self.get_queryset().filter(username__icontains=username).select_related('userprofile').prefetch_related('emails')
         if users.count() == 0:
             return Response(status=status.HTTP_404_NOT_FOUND)
         else:
