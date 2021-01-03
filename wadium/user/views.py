@@ -146,7 +146,8 @@ class UserViewSet(viewsets.GenericViewSet):
     def retrieve(self, request, pk=None):
         if pk != 'me':
             return Response({"error": "Can't show other user's information"}, status=status.HTTP_403_FORBIDDEN)
-
+        if not request.user.is_authenticated:
+            return Response(status=status.HTTP_404_NOT_FOUND)
         profile = request.user.userprofile
         serializer = self.get_serializer(profile)
         return Response(serializer.data)
