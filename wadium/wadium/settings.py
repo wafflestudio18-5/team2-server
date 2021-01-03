@@ -47,13 +47,14 @@ INSTALLED_APPS = [
     'story.apps.StoryConfig',
     'django.contrib.sites',
 
-    #allauth
+    # allauth
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
 
-    #provider
-    'allauth.socialaccount.providers.google',
+    # provider
+    'user.providers.google',
+    # 'allauth.socialaccount.providers.google',
     # 'allauth.socialaccount.providers.facebook',
 
 ]
@@ -178,10 +179,12 @@ ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = False
 SOCIALACCOUNT_QUERY_EMAIL = True
 
 SITE_ID = 2
-LOGIN_REDIRECT_URL = '/'
 
 ACCOUNT_EMAIL_REQUIRED = True
 SOCIALACCOUNT_EMAIL_REQUIRED = True
 SOCIALACCOUNT_AUTO_SIGNUP = True
 
+ACCOUNT_ADAPTER = "wadium.adapters.WadiumAccountAdapter"
 SOCIALACCOUNT_ADAPTER = "wadium.adapters.WadiumSocialAccountAdapter"
+
+LOGIN_REDIRECT_URL = '/login/success/'  # Not redirected, but used to check
