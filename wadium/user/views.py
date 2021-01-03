@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
-from .serializers import UserSerializer, UserLoginSerializer, UserSelfSerializer, SocialSerializer
+from .serializers import UserSerializer, UserLoginSerializer, UserSelfSerializer
 from .models import EmailAddress, EmailAuth, UserProfile
 
 from rest_framework import status, viewsets
