@@ -3,9 +3,9 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import NotFound, PermissionDenied
-from rest_framework import status
 
-from .models import UserProfile, EmailAddress, EmailAuth
+from .models import UserProfile, EmailAuth
+from story.models import Story
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -172,7 +172,7 @@ class UserLoginSerializer(serializers.ModelSerializer):
         else:
             raise NotImplementedError()
 
-#자신의 정보 확인/수정
+            
 class UserSelfSerializer(serializers.ModelSerializer):
     name = serializers.CharField()
     bio = serializers.CharField(required=False)
@@ -192,6 +192,7 @@ class UserSelfSerializer(serializers.ModelSerializer):
         print(self.context)
         return UserSocialSerializer(user, context=self.context).data
 
+      
 class UserSocialSerializer(serializers.ModelSerializer):
     google = serializers.CharField(source='user.usergoogle.google_sub', required=False)
     facebook = serializers.CharField(source='user.userfacebook.facebook_sub', required=False)
@@ -201,3 +202,31 @@ class UserSocialSerializer(serializers.ModelSerializer):
             'google',
             'facebook',
         )
+
+        
+class MyStorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Story
+        fields = (
+            'id',
+            'title',
+            'subtitle',
+            'created_at',
+            'updated_at',
+            'published_at',
+            'published'
+        )
+        read_only_fields = fields
+
+
+class UserStorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Story
+        fields = (
+            'id',
+            'title',
+            'subtitle',
+            'body',
+            'published_at',
+        )
+        read_only_fields = fields

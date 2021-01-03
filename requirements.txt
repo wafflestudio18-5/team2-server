@@ -13,3 +13,5 @@ pytz==2020.4
 requests==2.25.1
 sqlparse==0.4.1
 urllib3==1.26.2
+django-redis==4.12.1
+redis==3.5.3
