@@ -17,15 +17,18 @@ class StoryViewSet(viewsets.GenericViewSet):
     pagination_class = StoryPagination
 
     cache_story_page1_key = 'story:list-1'
+    cache_story_main_key = 'story:main'
+    cache_story_trending_key = 'story:trending'
     cache_timeout = 60
+    cache_timeout_long = 600
 
     def get_serializer_class(self):
-        if self.action in ('list',):
+        if self.action in ('list', 'main', 'trending'):
             return SimpleStorySerializer
         return self.serializer_class
 
     def get_permissions(self):
-        if self.action in ('retrieve', 'list'):
+        if self.action in ('retrieve', 'list', 'main', 'trending'):
             return (AllowAny(),)
         return self.permission_classes
 
@@ -63,6 +66,8 @@ class StoryViewSet(viewsets.GenericViewSet):
         if 'tag' in request.query_params:
             return Response({'error': 'tag query is not implemented'}, status=status.HTTP_501_NOT_IMPLEMENTED)
             # is_cacheable = False
+        if is_cacheable:
+            queryset = queryset.filter(main_order=None, trending_order=None)
         if is_cacheable and request.query_params.get('page', 1) in (1, '1'):
             cached_data = cache.get(self.cache_story_page1_key)
             if cached_data is None:
@@ -82,6 +87,40 @@ class StoryViewSet(viewsets.GenericViewSet):
         serializer = self.get_serializer(page, many=True)
 
         return self.get_paginated_response(serializer.data)
+
+    @action(methods=['GET'], detail=False)
+    def main(self, request):
+        cached_data = cache.get(self.cache_story_main_key)
+        if cached_data is None:
+            queryset = self.get_queryset(). \
+                filter(published=True). \
+                filter(main_order__gte=1, main_order__lte=5). \
+                order_by('main_order'). \
+                defer('body'). \
+                select_related('writer'). \
+                prefetch_related('writer__userprofile')
+            data = self.get_serializer(queryset, many=True).data
+            cache.set(self.cache_story_main_key, data, timeout=self.cache_timeout_long)
+        else:
+            data = cached_data
+        return Response(data)
+
+    @action(methods=['GET'], detail=False)
+    def trending(self, request):
+        cached_data = cache.get(self.cache_story_trending_key)
+        if cached_data is None:
+            queryset = self.get_queryset(). \
+                filter(published=True). \
+                filter(trending_order__gte=1, trending_order__lte=6). \
+                order_by('trending_order'). \
+                defer('body'). \
+                select_related('writer'). \
+                prefetch_related('writer__userprofile')
+            data = self.get_serializer(queryset, many=True).data
+            cache.set(self.cache_story_trending_key, data, timeout=self.cache_timeout_long)
+        else:
+            data = cached_data
+        return Response(data)
 
     @action(methods=['POST'], detail=True)
     def publish(self, request, pk=None):
