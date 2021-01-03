@@ -126,9 +126,7 @@ class UserViewSet(viewsets.GenericViewSet):
             return Response({
                 'error': 'username query is required.'
             }, status=status.HTTP_400_BAD_REQUEST)
-        users = self.get_queryset().filter(username__icontains=username) \
-            .select_related('userprofile') \
-            .prefetch_related('emails')
+        users = self.get_queryset().filter(username__icontains=username).select_related('userprofile')
         if users.count() == 0:
             return Response(status=status.HTTP_404_NOT_FOUND)
         else:
