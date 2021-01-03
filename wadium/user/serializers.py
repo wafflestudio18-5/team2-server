@@ -172,13 +172,14 @@ class UserLoginSerializer(serializers.ModelSerializer):
         else:
             raise NotImplementedError()
 
-            
+
 class UserSelfSerializer(serializers.ModelSerializer):
     name = serializers.CharField()
     bio = serializers.CharField(required=False)
     profile_image = serializers.URLField(required=False)
     email = serializers.CharField(read_only=True)
     connection = serializers.SerializerMethodField()
+
     class Meta:
         model = UserProfile
         fields = (
@@ -188,14 +189,15 @@ class UserSelfSerializer(serializers.ModelSerializer):
             'email',
             'connection'
         )
+
     def get_connection(self, user):
-        print(self.context)
         return UserSocialSerializer(user, context=self.context).data
 
-      
+
 class UserSocialSerializer(serializers.ModelSerializer):
     google = serializers.CharField(source='user.usergoogle.google_sub', required=False)
     facebook = serializers.CharField(source='user.userfacebook.facebook_sub', required=False)
+
     class Meta:
         model = User
         fields = (
@@ -203,7 +205,7 @@ class UserSocialSerializer(serializers.ModelSerializer):
             'facebook',
         )
 
-        
+
 class MyStorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Story
