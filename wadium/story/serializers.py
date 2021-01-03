@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import Story
 from user.serializers import UserSerializer
 
+
 class StorySerializer(serializers.ModelSerializer):
     writer = UserSerializer(read_only=True)
     title = serializers.CharField(max_length=100, allow_blank=True)
@@ -13,7 +14,7 @@ class StorySerializer(serializers.ModelSerializer):
     published = serializers.BooleanField(default=False, read_only=True)
     published_at = serializers.DateTimeField(allow_null=True, default=None, read_only=True)
 
-    class Meta: 
+    class Meta:
         model = Story
         fields = (
             'id',
@@ -27,7 +28,7 @@ class StorySerializer(serializers.ModelSerializer):
             'published',
             'published_at',
         )
-        
+
     def validate(self, data):
         return data
 
@@ -47,3 +48,20 @@ class StorySerializer(serializers.ModelSerializer):
 
         story = super(StorySerializer, self).update(instance, validated_data)
         return story
+
+
+class SimpleStorySerializer(serializers.ModelSerializer):
+    writer = UserSerializer(read_only=True)
+
+    class Meta:
+        model = Story
+        fields = (
+            'id',
+            'writer',
+            'title',
+            'subtitle',
+            'featured_image',
+            'created_at',
+            'published_at',
+        )
+        read_only_fields = fields
