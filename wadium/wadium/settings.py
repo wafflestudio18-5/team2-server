@@ -45,6 +45,17 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'user.apps.UserConfig',
     'story.apps.StoryConfig',
+    'django.contrib.sites',
+
+    #allauth
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+
+    #provider
+    'allauth.socialaccount.providers.google',
+    'allauth.socialaccount.providers.facebook',
+
 ]
 
 MIDDLEWARE = [
@@ -141,3 +152,30 @@ STATIC_URL = '/static/'
 # Mailjet API
 MAILJET_API_KEY = os.getenv('MAILJET_API_KEY')
 MAILJET_API_SECRET = os.getenv('MAILJET_API_SECRET')
+
+AUTHENTICATION_BACKENDS = (
+    # Needed to login by username in Django admin, regardless of `allauth`
+    'django.contrib.auth.backends.ModelBackend',
+
+    # `allauth` specific authentication methods, such as login by e-mail
+    'allauth.account.auth_backends.AuthenticationBackend',
+)
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        # For each OAuth based provider, either add a ``SocialApp``
+        # (``socialaccount`` app) containing the required client
+        # credentials, or list them here:
+        'APP': {
+            'client_id': '547861684988-3stvt30tjr8uu0j4llqeh8qpblf0a8uv.apps.googleusercontent.com',
+            'secret': 'd-dpDCtOtOlBcrOozo81TJwB',
+            'key': ''
+        }
+    }
+}
+
+SITE_ID = 2
+LOGIN_REDIRECT_URL = '/'
+
+SOCIALACCOUNT_EMAIL_REQUIRED = True
+SOCIALACCOUNT_AUTO_SIGNUP = True
