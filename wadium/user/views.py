@@ -3,7 +3,9 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
-from .serializers import UserSerializer, UserLoginSerializer, MyStorySerializer, UserStorySerializer
+
+from .serializers import UserSerializer, UserLoginSerializer, UserSelfSerializer, UserSocialSerializer, \
+    MyStorySerializer, UserStorySerializer
 from .models import EmailAddress, EmailAuth, UserProfile
 from .permissions import UserAccessPermission
 from story.paginators import StoryPagination
@@ -117,6 +119,55 @@ class UserViewSet(viewsets.GenericViewSet):
     def logout(self, request):
         logout(request)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def list(self, request):
+        username = request.query_params.get('username', '')
+        if not username:
+            return Response({
+                'error': 'username query is required.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        users = self.get_queryset().filter(username__icontains=username).select_related('userprofile')
+        if users.count() == 0:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response(self.get_serializer(users, many=True).data)
+
+    @action(detail=True, methods=['GET'])
+    def about(self, request, pk):
+        user = request.user if pk == 'me' else self.get_object()
+        if user.is_authenticated:
+            return Response(self.get_serializer(user).data)
+        else:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+    # 자신의 정보 확인
+    def retrieve(self, request, pk=None):
+        if pk != 'me':
+            return Response({"error": "Can't show other user's information"}, status=status.HTTP_403_FORBIDDEN)
+        if not request.user.is_authenticated:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        profile = request.user.userprofile
+        serializer = self.get_serializer(profile)
+        return Response(serializer.data)
+
+    # 자신의 정보 수정
+    def update(self, request, pk=None):
+        if pk != 'me':
+            return Response({"error": "Can't update other user's information"}, status=status.HTTP_403_FORBIDDEN)
+
+        profile = request.user.userprofile
+        data = request.data
+
+        serializer = self.get_serializer(profile, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.update(profile, serializer.validated_data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def get_serializer_class(self):
+        if self.action == 'update' or self.action == 'retrieve':
+            return UserSelfSerializer
+        else:
+            return UserSerializer
 
     @action(detail=True, methods=['GET'])
     def story(self, request, pk=None):
