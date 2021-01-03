@@ -54,7 +54,7 @@ INSTALLED_APPS = [
 
     #provider
     'allauth.socialaccount.providers.google',
-    'allauth.socialaccount.providers.facebook',
+    # 'allauth.socialaccount.providers.facebook',
 
 ]
 
@@ -174,8 +174,14 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
+ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = False
+SOCIALACCOUNT_QUERY_EMAIL = True
+
 SITE_ID = 2
 LOGIN_REDIRECT_URL = '/'
 
+ACCOUNT_EMAIL_REQUIRED = True
 SOCIALACCOUNT_EMAIL_REQUIRED = True
 SOCIALACCOUNT_AUTO_SIGNUP = True
+
+SOCIALACCOUNT_ADAPTER = "wadium.adapters.WadiumSocialAccountAdapter"
