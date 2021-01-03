@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
-from .serializers import UserSerializer, UserLoginSerializer
+from .serializers import UserSerializer, UserLoginSerializer, UserSelfSerializer, UserSocialSerializer
 from .models import EmailAddress, EmailAuth, UserProfile
 
 from rest_framework import status, viewsets
@@ -99,7 +99,7 @@ class UserViewSet(viewsets.GenericViewSet):
 
     def list(self, request):
         username = request.query_params.get('username')
-        users = self.get_queryset().filter(username__icontains=username)
+        users = users.select_related('userprofile').prefetch_related('emails')
         if users.count() == 0:
             return Response(status=status.HTTP_404_NOT_FOUND)
         else:
@@ -108,7 +108,10 @@ class UserViewSet(viewsets.GenericViewSet):
     @action(detail=True, methods=['GET'])
     def about(self, request, pk):
         user = request.user if pk == 'me' else self.get_object()
-        return Response(self.get_serializer(user).data)
+        if user.is_authenticated:
+            return Response(self.get_serializer(user).data)
+        else :
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
     #자신의 정보 확인
     def retrieve(self, request, pk=None):
@@ -125,7 +128,7 @@ class UserViewSet(viewsets.GenericViewSet):
             return Response({"error": "Can't update other user's information"}, status=status.HTTP_403_FORBIDDEN)
 
         profile = request.user.userprofile
-        data = request.data.copy()
+        data = request.data
 
         serializer = self.get_serializer(profile, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -137,8 +140,3 @@ class UserViewSet(viewsets.GenericViewSet):
             return UserSelfSerializer
         else:
             return UserSerializer
-
-#class UserSocialLoginViewSet(viwesets.GenericViewSet):
-#    queryset = User.objects.all()
-#    serializer_class = SocialSerializer
-
