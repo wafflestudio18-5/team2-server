@@ -3,9 +3,9 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import NotFound, PermissionDenied
-from rest_framework import status
 
-from .models import UserProfile, EmailAddress, EmailAuth
+from .models import UserProfile, EmailAuth
+from story.models import Story
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -171,3 +171,64 @@ class UserLoginSerializer(serializers.ModelSerializer):
                 return email_auth.email_address.user
         else:
             raise NotImplementedError()
+
+
+class UserSelfSerializer(serializers.ModelSerializer):
+    name = serializers.CharField()
+    bio = serializers.CharField(required=False)
+    profile_image = serializers.URLField(required=False)
+    email = serializers.CharField(read_only=True)
+    connection = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserProfile
+        fields = (
+            'name',
+            'bio',
+            'profile_image',
+            'email',
+            'connection'
+        )
+
+    def get_connection(self, user):
+        return UserSocialSerializer(user, context=self.context).data
+
+
+class UserSocialSerializer(serializers.ModelSerializer):
+    google = serializers.CharField(source='user.usergoogle.google_sub', required=False)
+    facebook = serializers.CharField(source='user.userfacebook.facebook_sub', required=False)
+
+    class Meta:
+        model = User
+        fields = (
+            'google',
+            'facebook',
+        )
+
+
+class MyStorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Story
+        fields = (
+            'id',
+            'title',
+            'subtitle',
+            'created_at',
+            'updated_at',
+            'published_at',
+            'published'
+        )
+        read_only_fields = fields
+
+
+class UserStorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Story
+        fields = (
+            'id',
+            'title',
+            'subtitle',
+            'body',
+            'published_at',
+        )
+        read_only_fields = fields
