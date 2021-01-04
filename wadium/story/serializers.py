@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Story
+from .models import Story, StoryComment
 from user.serializers import UserSerializer
 
 
@@ -65,3 +65,25 @@ class SimpleStorySerializer(serializers.ModelSerializer):
             'published_at',
         )
         read_only_fields = fields
+
+class CommentSerializer(serializers.ModelSerializer):
+    writer = UserSerializer(read_only=True)
+    story_id = serializers.IntegerField(source='story.id', read_only=True)
+
+    class Meta:
+        model = StoryComment
+        fields = (
+            'id',
+            'story_id',
+            'writer',
+            'body',
+            'created_at',
+            'updated_at',
+        )
+        read_only_fields = ('created_at', 'updated_at',)
+
+    def create(self, validated_data):
+        validated_data['writer'] = self.context['user']
+        validated_data['story'] = self.context['story']
+        story = super(CommentSerializer, self).create(validated_data)
+        return story

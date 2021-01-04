@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.core.cache import cache
 
 from .models import Story, StoryComment, StoryRead, StoryTag
-from .serializers import StorySerializer, SimpleStorySerializer
+from .serializers import StorySerializer, SimpleStorySerializer, CommentSerializer
 from .paginators import StoryPagination
 
 
@@ -28,7 +28,7 @@ class StoryViewSet(viewsets.GenericViewSet):
         return self.serializer_class
 
     def get_permissions(self):
-        if self.action in ('retrieve', 'list', 'main', 'trending'):
+        if self.action in ('retrieve', 'list', 'comment_list', 'main', 'trending'):
             return (AllowAny(),)
         return self.permission_classes
 
@@ -142,3 +142,54 @@ class StoryViewSet(viewsets.GenericViewSet):
             return Response({'error': "You can't delete others' story"}, status=status.HTTP_403_FORBIDDEN)
         story.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def comment_post(self, request, story):
+        serializer = CommentSerializer(data=request.data, context={'story': story, 'user': request.user})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def comment_edit(self, request, comment):
+        serializer = CommentSerializer(comment, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.update(comment, serializer.validated_data)
+        return Response(serializer.data)
+
+    def comment_delete(self, request, comment):
+        comment.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(methods=['POST', 'PUT', 'DELETE'], detail=True)
+    def comment(self, request, pk=None):
+        if pk is None:
+            return Response({'error': "Primary key is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        story = self.get_object()
+
+        if request.method == 'POST':
+            return self.comment_post(request, story)
+
+        else: # When method is PUT or DELETE
+            if 'id' not in request.query_params:
+                return Response({'error': "comment id is required"}, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                comment = story.comments.get(id=request.query_params.get('id'))
+            except StoryComment.DoesNotExist:
+                return Response({'error': "Comments with this id do not exist in this story."}, status=status.HTTP_400_BAD_REQUEST)
+            if comment.writer != request.user:
+                return Response({'error': "This is not your comment"}, status=status.HTTP_403_FORBIDDEN)
+
+            if request.method == 'PUT':
+                return self.comment_edit(request, comment)
+            elif request.method == 'DELETE':
+                return self.comment_delete(request, comment)
+
+    @comment.mapping.get
+    def comment_list(self, request, pk=None):
+        story = self.get_object()
+        queryset = story.comments.all()
+        page = self.paginate_queryset(queryset)
+        assert page is not None
+        serializer = CommentSerializer(page, many=True)
+
+        return self.get_paginated_response(serializer.data)
