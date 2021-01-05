@@ -7,9 +7,10 @@ from story.models import Story
 from django.contrib.auth.models import User
 from .constants import body_example
 
-class PublishStoryTestCase(TransactionTestCase):
+class DeleteStoryTestCase(TransactionTestCase):
     client = Client()
     reset_sequences = True
+    
 
     def setUp(self):
         self.client.post(
@@ -38,48 +39,31 @@ class PublishStoryTestCase(TransactionTestCase):
             HTTP_AUTHORIZATION=self.user_token
         )
 
-    def test_publish_story(self):
+    def test_delete_story(self):
         self.assertEqual(Story.objects.count(), 1)
         self.assertEqual(Story.objects.get(title="Hello").id, 1)
-
-        response = self.client.post(
-            '/story/1/publish/',
+        
+        response = self.client.delete(
+            "/story/1/",
             HTTP_AUTHORIZATION=self.user_token
         )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        data = response.json()
-        self.assertIn("id", data)
-        self.assertEqual(data['id'], 1)
-        self.assertIn("writer", data)
-        self.assertEqual(data["writer"]["username"], "seoyoon")
-        self.assertEqual(data["title"], "Hello")
-        self.assertEqual(data["subtitle"], "Say hello!")
-        self.assertEqual(data["body"], body_example)
-        self.assertEqual(data["featured_image"], "")
-        self.assertIn("created_at", data)
-        self.assertIn("updated_at", data)
 
-        self.assertTrue(data["published"])
-        self.assertNotEqual(data["published_at"], None)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
-        story = Story.objects.get(id=1)
-        self.assertTrue(story.published)
-        self.assertNotEqual(story.published_at, None)
-
-    def test_publish_story_without_token(self):
-        response = self.client.post(
-            '/story/1/publish/',
+    def test_delete_story_without_token(self):
+        response = self.client.delete(
+            "/story/1/"
         )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_puslish_others_story(self):
+    def test_delete_others_story(self):
         self.client.post(
-            '/user/',
+            "/user/",
             json.dumps({
                 "auth_type": "TEST",
                 "username": "seoyoon2",
                 "password": "password",
-                "name": "Seoyoon2",
+                "name": "Seoyoon",
                 "email": "seoyoon2@wadium.shop",
                 "profile_image": "https://wadium.shop/image/"
             }),
@@ -87,9 +71,8 @@ class PublishStoryTestCase(TransactionTestCase):
         )
         self.user2_token = 'Token ' + Token.objects.get(user__username='seoyoon2').key
 
-        response = self.client.post(
-            '/story/1/publish/',
+        response = self.client.delete(
+            "/story/1/",
             HTTP_AUTHORIZATION=self.user2_token
         )
-
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

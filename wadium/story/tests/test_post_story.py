@@ -6,36 +6,11 @@ import datetime
 
 from story.models import Story
 from django.contrib.auth.models import User
+from .constants import body_example
 
 class PostStoryTestCase(TransactionTestCase):
     client = Client()
     reset_sequences = True
-    body_example = [
-        [
-            {
-                "type": "paragraph",
-                "detail": {
-                    "content": "Wadium",
-                    "emphasizing": "large"
-                }
-            },
-            {
-                "type": "paragraph",
-                "detail": {
-                    "content": "Normal <em>hello! <strong>asdbasdnb</strong>asdbpoiahsb</em>",
-                    "emphasizing": "normal"
-                }
-            },
-            {
-                "type": "image",
-                "detail": {
-                    "size": "normal",
-                    "imgsrc": "https://wadium.shop/image/",
-                    "content": "image caption"
-                }
-            }
-        ]
-    ]
 
     def setUp(self):
         self.client.post(
@@ -59,7 +34,7 @@ class PostStoryTestCase(TransactionTestCase):
             json.dumps({
                 "title": "First Wadium Story",
                 "subtitle": "This story has no content",
-                "body": self.body_example,
+                "body": body_example,
                 "featured_image": "https://wadium.shop/image/"
             }),
             content_type='application/json',
@@ -74,7 +49,7 @@ class PostStoryTestCase(TransactionTestCase):
         self.assertEqual(data["writer"]["username"], "seoyoon")
         self.assertEqual(data["title"], "First Wadium Story")
         self.assertEqual(data["subtitle"], "This story has no content")
-        self.assertEqual(data["body"], self.body_example)
+        self.assertEqual(data["body"], body_example)
         self.assertEqual(data["featured_image"], "https://wadium.shop/image/")
         self.assertFalse(data["published"])
         self.assertIn("created_at", data)
@@ -123,7 +98,7 @@ class PostStoryTestCase(TransactionTestCase):
             '/story/',
             json.dumps({
                 "subtitle": "This story has no content",
-                "body": self.body_example,
+                "body": body_example,
                 "featured_image": "https://wadium.shop/image/"
             }),
             content_type='application/json',
@@ -148,7 +123,7 @@ class PostStoryTestCase(TransactionTestCase):
             json.dumps({
                 "title": "Hello",
                 "subtitle": "This story has no content",
-                "body": self.body_example,
+                "body": body_example,
             }),
             content_type='application/json',
             HTTP_AUTHORIZATION=self.user_token
@@ -176,7 +151,7 @@ class PostStoryTestCase(TransactionTestCase):
             json.dumps({
                 "title": "First Wadium Story",
                 "subtitle": "This story has no content",
-                "body": self.body_example,
+                "body": body_example,
                 "featured_image": "hello"
             }),
             content_type='application/json',
@@ -191,7 +166,7 @@ class PostStoryTestCase(TransactionTestCase):
             json.dumps({
                 "title": "First Wadium Story",
                 "subtitle": "This story has no content",
-                "body": self.body_example,
+                "body": body_example,
                 "featured_image": "https://wadium.shop/image/"
             }),
             content_type='application/json'

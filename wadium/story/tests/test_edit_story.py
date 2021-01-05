@@ -6,36 +6,11 @@ import datetime
 
 from story.models import Story
 from django.contrib.auth.models import User
+from .constants import body_example
 
 class PostStoryTestCase(TransactionTestCase):
     client = Client()
     reset_sequences = True
-    body_example = [
-        [
-            {
-                "type": "paragraph",
-                "detail": {
-                    "content": "Wadium",
-                    "emphasizing": "large"
-                }
-            },
-            {
-                "type": "paragraph",
-                "detail": {
-                    "content": "Normal <em>hello! <strong>asdbasdnb</strong>asdbpoiahsb</em>",
-                    "emphasizing": "normal"
-                }
-            },
-            {
-                "type": "image",
-                "detail": {
-                    "size": "normal",
-                    "imgsrc": "https://wadium.shop/image/",
-                    "content": "image caption"
-                }
-            }
-        ]
-    ]
 
     def setUp(self):
         # create users
@@ -58,7 +33,7 @@ class PostStoryTestCase(TransactionTestCase):
             json.dumps({
                 "title": "First Wadium Story",
                 "subtitle": "This story has no content",
-                "body": self.body_example,
+                "body": body_example,
                 "featured_image": ""
             }),
             content_type='application/json',
@@ -175,7 +150,7 @@ class PostStoryTestCase(TransactionTestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         story = Story.objects.get(id=1)
         self.assertEqual(story.title, "First Wadium Story")
-        self.assertEqual(story.body, self.body_example)
+        self.assertEqual(story.body, body_example)
 
     def test_edit_others_story(self):
         self.client.post(
@@ -204,4 +179,4 @@ class PostStoryTestCase(TransactionTestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         story = Story.objects.get(id=1)
         self.assertEqual(story.title, "First Wadium Story")
-        self.assertEqual(story.body, self.body_example)
+        self.assertEqual(story.body, body_example)
