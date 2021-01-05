@@ -165,6 +165,8 @@ class StoryViewSet(viewsets.GenericViewSet):
             return Response({'error': "Primary key is required"}, status=status.HTTP_400_BAD_REQUEST)
 
         story = self.get_object()
+        if not story.published:
+            return Response({'error': "This story is not published yet"}, status=status.HTTP_400_BAD_REQUEST)
 
         if request.method == 'POST':
             return self.comment_post(request, story)
