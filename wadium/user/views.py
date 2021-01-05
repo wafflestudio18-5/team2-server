@@ -16,8 +16,6 @@ from rest_framework.authtoken.models import Token
 import requests
 
 from django.conf import settings
-from google.auth.transport import requests
-from google.oauth2 import id_token
 #from rest_framework.decorators import permission_classes
 
 class UserViewSet(viewsets.GenericViewSet):
