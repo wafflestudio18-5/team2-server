@@ -66,6 +66,19 @@ class PublishStoryTestCase(TransactionTestCase):
         self.assertTrue(story.published)
         self.assertNotEqual(story.published_at, None)
 
+        # unpublish again
+        response = self.client.post(
+            '/story/1/publish/',
+            HTTP_AUTHORIZATION=self.user_token
+        )
+        data = response.json()
+        self.assertFalse(data["published"])
+        self.assertEqual(data["published_at"], None)
+
+        story = Story.objects.get(id=1)
+        self.assertFalse(story.published)
+        self.assertEqual(story.published_at, None)
+
     def test_publish_story_without_token(self):
         response = self.client.post(
             '/story/1/publish/',
