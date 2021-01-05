@@ -79,7 +79,7 @@ class PostStoryTestCase(TransactionTestCase):
         self.assertFalse(data["published"])
         self.assertIn("created_at", data)
         self.assertIn("updated_at", data)
-        self.assertIn("published_at", data)
+        self.assertEqual(data["published_at"], None)
 
         # Check if this story is saved in DB
         story = Story.objects.get(id=1)
@@ -111,7 +111,7 @@ class PostStoryTestCase(TransactionTestCase):
         self.assertFalse(data["published"])
         self.assertIn("created_at", data)
         self.assertIn("updated_at", data)
-        self.assertIn("published_at", data)
+        self.assertEqual(data["published_at"], None)
 
         # Check if this story is saved in DB
         story = Story.objects.get(id=2)
