@@ -185,7 +185,6 @@ class PostStoryTestCase(TransactionTestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_post_story_without_token(self):
-    # w/o title
         response = self.client.post(
             '/story/',
             json.dumps({
