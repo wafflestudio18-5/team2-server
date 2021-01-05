@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'user.providers.google',
+    'user.providers.facebook',
 ]
 
 SITE_ID = 1
@@ -197,3 +198,16 @@ ACCOUNT_ADAPTER = "wadium.adapters.WadiumAccountAdapter"
 SOCIALACCOUNT_ADAPTER = "wadium.adapters.WadiumSocialAccountAdapter"
 
 LOGIN_REDIRECT_URL = '/login/success/'  # Not redirected, but used to check
+
+SOCIALACCOUNT_PROVIDERS = {
+    'facebook_no_redirect': {
+        'FIELDS': [
+            "id",
+            "email",
+            "name",
+            "first_name",
+            "last_name",
+            'picture',
+        ]
+    }
+}
