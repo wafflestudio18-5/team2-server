@@ -147,8 +147,3 @@ class UserViewSet(viewsets.GenericViewSet):
             return UserSelfSerializer
         else:
             return UserSerializer
-
-#class UserSocialLoginViewSet(viwesets.GenericViewSet):
-#    queryset = User.objects.all()
-#    serializer_class = SocialSerializer
-
