@@ -3,8 +3,10 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
-from .serializers import UserSerializer, UserLoginSerializer, UserSelfSerializer
+from .serializers import UserSerializer, UserLoginSerializer, UserSelfSerializer, UserSocialSerializer, MyStorySerializer, UserStorySerializer
 from .models import EmailAddress, EmailAuth, UserProfile
+from .permissions import UserAccessPermission
+from story.paginators import StoryPagination
 
 from rest_framework import status, viewsets
 from rest_framework.response import Response
@@ -21,6 +23,25 @@ from google.oauth2 import id_token
 class UserViewSet(viewsets.GenericViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    pagination_class = StoryPagination
+
+    def get_permissions(self):
+        if self.action == 'story':
+            self.permission_classes = [UserAccessPermission]
+        elif self.action == 'logout':
+            self.permission_classes = [IsAuthenticated]
+        else:
+            self.permission_classes = [AllowAny]
+        return super(UserViewSet, self).get_permissions()
+
+    def get_serializer_class(self):
+        if self.action == 'story':
+            if self.kwargs['pk'] == 'me':
+                return MyStorySerializer
+            else:
+                return UserStorySerializer
+        else:
+            return self.serializer_class
 
     def create(self, request):
         serializer = self.get_serializer(data=request.data)
@@ -102,14 +123,18 @@ class UserViewSet(viewsets.GenericViewSet):
         data['token'] = token.key
         return Response(data=data)
 
-    @action(detail=False, methods=['POST'], permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=['POST'])
     def logout(self, request):
         logout(request)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def list(self, request):
-        username = request.query_params.get('username')
-        users = self.get_queryset().filter(username__icontains=username)
+        username = request.query_params.get('username', '')
+        if not username:
+            return Response({
+                'error': 'username query is required.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        users = self.get_queryset().filter(username__icontains=username).select_related('userprofile')
         if users.count() == 0:
             return Response(status=status.HTTP_404_NOT_FOUND)
         else:
@@ -118,24 +143,28 @@ class UserViewSet(viewsets.GenericViewSet):
     @action(detail=True, methods=['GET'])
     def about(self, request, pk):
         user = request.user if pk == 'me' else self.get_object()
-        return Response(self.get_serializer(user).data)
+        if user.is_authenticated:
+            return Response(self.get_serializer(user).data)
+        else:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
-    #자신의 정보 확인
+    # 자신의 정보 확인
     def retrieve(self, request, pk=None):
         if pk != 'me':
             return Response({"error": "Can't show other user's information"}, status=status.HTTP_403_FORBIDDEN)
-
+        if not request.user.is_authenticated:
+            return Response(status=status.HTTP_404_NOT_FOUND)
         profile = request.user.userprofile
         serializer = self.get_serializer(profile)
         return Response(serializer.data)
 
-    #자신의 정보 수정
+    # 자신의 정보 수정
     def update(self, request, pk=None):
         if pk != 'me':
             return Response({"error": "Can't update other user's information"}, status=status.HTTP_403_FORBIDDEN)
 
         profile = request.user.userprofile
-        data = request.data.copy()
+        data = request.data
 
         serializer = self.get_serializer(profile, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -147,3 +176,49 @@ class UserViewSet(viewsets.GenericViewSet):
             return UserSelfSerializer
         else:
             return UserSerializer
+
+    @action(detail=True, methods=['GET'])
+    def story(self, request, pk=None):
+        if pk == 'me':
+            # /user/me/story/?public=[true|false]
+            public_query = request.query_params.get('public')
+            if public_query is None:
+                return Response({
+                    'error': "'public' is required."
+                }, status=status.HTTP_400_BAD_REQUEST)
+            if public_query in ('true', 'True', ' TRUE'):
+                public = True
+            elif public_query in ('false', 'False', 'FALSE'):
+                public = False
+            else:
+                return Response({
+                    'error': "'public' should either be 'true' or 'false'."
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            queryset = request.user.stories. \
+                filter(published=public). \
+                only(*MyStorySerializer.Meta.fields, 'writer')
+            if public:
+                queryset = queryset.order_by('-published_at')
+            else:
+                queryset = queryset.order_by('-updated_at')
+            page = self.paginate_queryset(queryset)
+            assert page is not None
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        # /user/{user_id}/story/
+        queryset = self.get_object().stories. \
+            filter(published=True). \
+            only(*UserStorySerializer.Meta.fields, 'writer'). \
+            order_by('-published_at')
+        if 'title' in request.query_params:
+            title = request.query_params.get('title')
+            queryset = queryset.filter(title__icontains=title)
+        if 'tag' in request.query_params:
+            return Response({'error': 'tag query is not implemented'}, status=status.HTTP_501_NOT_IMPLEMENTED)
+        self.paginator.page_size = 5
+        page = self.paginate_queryset(queryset)
+        assert page is not None
+        serializer = self.get_serializer(page, many=True)
+        return self.get_paginated_response(serializer.data)

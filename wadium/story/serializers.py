@@ -1,6 +1,8 @@
 from rest_framework import serializers
-from .models import Story
+from .models import Story, StoryComment
 from user.serializers import UserSerializer
+
+
 
 class StorySerializer(serializers.ModelSerializer):
     writer = UserSerializer(read_only=True)
@@ -13,7 +15,7 @@ class StorySerializer(serializers.ModelSerializer):
     published = serializers.BooleanField(default=False, read_only=True)
     published_at = serializers.DateTimeField(allow_null=True, default=None, read_only=True)
 
-    class Meta: 
+    class Meta:
         model = Story
         fields = (
             'id',
@@ -27,7 +29,7 @@ class StorySerializer(serializers.ModelSerializer):
             'published',
             'published_at',
         )
-        
+
     def validate(self, data):
         return data
 
@@ -47,3 +49,43 @@ class StorySerializer(serializers.ModelSerializer):
 
         story = super(StorySerializer, self).update(instance, validated_data)
         return story
+      
+
+class SimpleStorySerializer(serializers.ModelSerializer):
+    writer = UserSerializer(read_only=True)
+
+    class Meta:
+        model = Story
+        fields = (
+            'id',
+            'writer',
+            'title',
+            'subtitle',
+            'featured_image',
+            'created_at',
+            'published_at',
+        )
+        read_only_fields = fields
+
+class CommentSerializer(serializers.ModelSerializer):
+    writer = UserSerializer(read_only=True)
+    story_id = serializers.IntegerField(source='story.id', read_only=True)
+
+    class Meta:
+        model = StoryComment
+        fields = (
+            'id',
+            'story_id',
+            'writer',
+            'body',
+            'created_at',
+            'updated_at',
+        )
+        read_only_fields = ('created_at', 'updated_at',)
+
+    def create(self, validated_data):
+        validated_data['writer'] = self.context['user']
+        validated_data['story'] = self.context['story']
+        story = super(CommentSerializer, self).create(validated_data)
+        return story
+
