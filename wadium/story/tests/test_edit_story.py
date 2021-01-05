@@ -52,7 +52,23 @@ class PostStoryTestCase(TransactionTestCase):
             content_type='application/json'
         )
         self.user_token = 'Token ' + Token.objects.get(user__username='seoyoon').key
-        
+        self.client.post(
+            '/user/',
+            json.dumps({
+                "auth_type": "TEST",
+                "username": "seoyoon2",
+                "password": "password",
+                "name": "Seoyoon Moon",
+                "email": "seoyoon2@wadium.shop",
+                "profile_image": "https://wadium.shop/image/"
+            }),
+            content_type='application/json'
+        )
+        self.user2_token = 'Token ' + Token.objects.get(user__username='seoyoon2').key
+
+
+    def test_edit_story(self):
+        # create one story
         self.client.post(
             '/story/',
             json.dumps({
