@@ -49,7 +49,10 @@ class StoryViewSet(viewsets.GenericViewSet):
 
     def retrieve(self, request, pk=None):
         story = self.get_object()
-        return Response(self.get_serializer(story).data)
+        if story.published:
+            return Response(self.get_serializer(story).data)
+        else:
+            return Response({'error': "This story is not published yet"}, status=status.HTTP_400_BAD_REQUEST)
 
     def list(self, request):
         queryset = self.get_queryset(). \
