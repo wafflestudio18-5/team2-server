@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'user.apps.UserConfig',
     'story.apps.StoryConfig',
     'django.contrib.sites',
+    # 'sslserver', # apply https on localhost (temp)
 
     # allauth
     'allauth',
@@ -55,7 +56,8 @@ INSTALLED_APPS = [
     # provider
     'user.providers.google',
     # 'allauth.socialaccount.providers.google',
-    # 'allauth.socialaccount.providers.facebook',
+    'allauth.socialaccount.providers.facebook',
+    # 'user.providers.facebook',
 
 ]
 
@@ -154,6 +156,26 @@ STATIC_URL = '/static/'
 MAILJET_API_KEY = os.getenv('MAILJET_API_KEY')
 MAILJET_API_SECRET = os.getenv('MAILJET_API_SECRET')
 
+SOCIALACCOUNT_PROVIDERS = {
+    'facebook': {
+        'METHOD': 'oauth2',
+        'SCOPE': ['email', 'public_profile'],
+        'AUTH_PARAMS': {'auth_type': 'reauthenticate'},
+        'FIELDS': [
+            'id',
+            'email',
+            'name',
+            'verified',
+            'picture',
+            'locale',
+            'updated_time'],
+        'EXCHANGE_TOKEN': True,
+        'LOCALE_FUNC': lambda request: 'kr_KR',
+        'VERIFIED_EMAIL': False,
+        'VERSION': 'v2.8'
+    }
+}
+
 AUTHENTICATION_BACKENDS = (
     # Needed to login by username in Django admin, regardless of `allauth`
     'django.contrib.auth.backends.ModelBackend',
@@ -161,19 +183,6 @@ AUTHENTICATION_BACKENDS = (
     # `allauth` specific authentication methods, such as login by e-mail
     'allauth.account.auth_backends.AuthenticationBackend',
 )
-
-SOCIALACCOUNT_PROVIDERS = {
-    'google': {
-        # For each OAuth based provider, either add a ``SocialApp``
-        # (``socialaccount`` app) containing the required client
-        # credentials, or list them here:
-        'APP': {
-            'client_id': '547861684988-3stvt30tjr8uu0j4llqeh8qpblf0a8uv.apps.googleusercontent.com',
-            'secret': 'd-dpDCtOtOlBcrOozo81TJwB',
-            'key': ''
-        }
-    }
-}
 
 ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = False
 SOCIALACCOUNT_QUERY_EMAIL = True

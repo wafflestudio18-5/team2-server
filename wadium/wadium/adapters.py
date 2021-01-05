@@ -5,7 +5,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.serializers import ValidationError
 from allauth.exceptions import ImmediateHttpResponse
 from django.http import HttpResponseBadRequest
-
+from user.serializers import *
 
 class WadiumAccountAdapter(DefaultAccountAdapter):
     def is_open_for_signup(self, request):
@@ -28,15 +28,24 @@ class WadiumSocialAccountAdapter(DefaultSocialAccountAdapter):
                 return user
         except EmailAddress.DoesNotExist:
             pass
-        userprofile = {
-            'email': email,
-            'name': sociallogin.account.extra_data['name'],
-            'profile_image': sociallogin.account.extra_data['picture']
-        }
+
+        if sociallogin.account.provider == 'google':
+            userprofile = {
+                'email': email,
+                'name': sociallogin.account.extra_data['name'],
+                'profile_image': sociallogin.account.extra_data['picture']
+            }
+
+        elif sociallogin.account.provider == "facebook":
+            userprofile = {
+                'email': email,
+                'name': sociallogin.account.extra_data['name'],
+                'profile_image': sociallogin.account.extra_data['picture']['data']['url']
+            }
+
         try:
             user = UserProfile.create_user(
-                UserProfile.get_unique_username(sociallogin.account.extra_data['email']),
-                userprofile)
+                UserProfile.get_unique_username(sociallogin.account.extra_data['email']), userprofile)
         except ValidationError as e:
             res = HttpResponseBadRequest(str(e.detail))
             raise ImmediateHttpResponse(res)
