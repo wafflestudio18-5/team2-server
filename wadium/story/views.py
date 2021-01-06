@@ -25,6 +25,8 @@ class StoryViewSet(viewsets.GenericViewSet):
     def get_serializer_class(self):
         if self.action in ('list', 'main', 'trending'):
             return SimpleStorySerializer
+        elif self.action in ('comment','comment_list'):
+            return CommentSerializer
         return self.serializer_class
 
     def get_permissions(self):
@@ -148,22 +150,6 @@ class StoryViewSet(viewsets.GenericViewSet):
         story.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def comment_post(self, request, story):
-        serializer = CommentSerializer(data=request.data, context={'story': story, 'user': request.user})
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    def comment_edit(self, request, comment):
-        serializer = CommentSerializer(comment, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.update(comment, serializer.validated_data)
-        return Response(serializer.data)
-
-    def comment_delete(self, request, comment):
-        comment.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
     @action(methods=['POST', 'PUT', 'DELETE'], detail=True)
     def comment(self, request, pk=None):
         if pk is None:
@@ -171,10 +157,13 @@ class StoryViewSet(viewsets.GenericViewSet):
 
         story = self.get_object()
         if not story.published:
-            return Response({'error': "This story is not published yet"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': "This story is not published yet"}, status=status.HTTP_404_NOT_FOUND)
 
         if request.method == 'POST':
-            return self.comment_post(request, story)
+            serializer = CommentSerializer(data=request.data, context={'story': story, 'user': request.user})
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         else: # When method is PUT or DELETE
             if 'id' not in request.query_params:
@@ -187,9 +176,15 @@ class StoryViewSet(viewsets.GenericViewSet):
                 return Response({'error': "This is not your comment"}, status=status.HTTP_403_FORBIDDEN)
 
             if request.method == 'PUT':
-                return self.comment_edit(request, comment)
+                serializer = self.get_serializer(comment, data=request.data, partial=True)
+                serializer.is_valid(raise_exception=True)
+                serializer.update(comment, serializer.validated_data)
+                return Response(serializer.data)
+
             elif request.method == 'DELETE':
-                return self.comment_delete(request, comment)
+                comment.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+
 
     @comment.mapping.get
     def comment_list(self, request, pk=None):
@@ -197,6 +192,5 @@ class StoryViewSet(viewsets.GenericViewSet):
         queryset = story.comments.all()
         page = self.paginate_queryset(queryset)
         assert page is not None
-        serializer = CommentSerializer(page, many=True)
-
+        serializer = self.get_serializer(page, many=True)
         return self.get_paginated_response(serializer.data)
