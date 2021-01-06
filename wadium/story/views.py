@@ -195,7 +195,14 @@ class StoryViewSet(viewsets.GenericViewSet):
     @comment.mapping.get
     def comment_list(self, request, pk=None):
         story = self.get_object()
-        queryset = story.comments.all()
+        if not story.published:
+            return Response({'error': "This story is not published yet"}, status=status.HTTP_404_NOT_FOUND)
+        
+        queryset = story.comments.all(). \
+            order_by('created_at'). \
+            select_related('story', 'writer'). \
+            select_related('writer__userprofile')
+            
         page = self.paginate_queryset(queryset)
         assert page is not None
         serializer = self.get_serializer(page, many=True)
