@@ -4,8 +4,7 @@ from django.db import transaction
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 
-from .serializers import UserSerializer, UserLoginSerializer, UserSelfSerializer, UserSocialSerializer, \
-    MyStorySerializer, UserStorySerializer, UserProfileSerializer
+from .serializers import UserSerializer, UserLoginSerializer, UserSelfSerializer, UserSocialSerializer, MyStorySerializer, UserStorySerializer, UserProfileSerializer
 from .models import EmailAddress, EmailAuth, UserProfile
 from .permissions import UserAccessPermission
 from story.paginators import StoryPagination
@@ -37,6 +36,10 @@ class UserViewSet(viewsets.GenericViewSet):
                 return MyStorySerializer
             else:
                 return UserStorySerializer
+        elif self.action == 'update' or self.action == 'retrieve':
+            return UserSelfSerializer
+        elif self.action == 'about' or self.action == 'list':
+            return UserProfileSerializer
         else:
             return self.serializer_class
 
@@ -164,14 +167,6 @@ class UserViewSet(viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.update(profile, serializer.validated_data)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def get_serializer_class(self):
-        if self.action == 'update' or self.action == 'retrieve' :
-            return UserSelfSerializer
-        elif self.action == 'about' or self.action == 'list':
-            return UserProfileSerializer
-        else :
-            return UserSerializer
 
     @action(detail=True, methods=['GET'])
     def story(self, request, pk=None):
