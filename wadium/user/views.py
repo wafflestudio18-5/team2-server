@@ -37,6 +37,8 @@ class UserViewSet(viewsets.GenericViewSet):
                 return MyStorySerializer
             else:
                 return UserStorySerializer
+        elif self.action == 'update' or self.action == 'retrieve':
+            return UserSelfSerializer
         else:
             return self.serializer_class
 
@@ -162,12 +164,6 @@ class UserViewSet(viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.update(profile, serializer.validated_data)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def get_serializer_class(self):
-        if self.action == 'update' or self.action == 'retrieve':
-            return UserSelfSerializer
-        else:
-            return UserSerializer
 
     @action(detail=True, methods=['GET'])
     def story(self, request, pk=None):
