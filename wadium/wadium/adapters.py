@@ -19,6 +19,13 @@ class WadiumSocialAccountAdapter(DefaultSocialAccountAdapter):
 
     def save_user(self, request, sociallogin, form=None):
         email = sociallogin.account.extra_data['email']
+        if sociallogin.account.provider == 'facebook_no_redirect':
+            picture = sociallogin.account.extra_data['picture']['data']['url']
+        elif sociallogin.account.provider == 'google_no_redirect':
+            picture = sociallogin.account.extra_data['picture']
+        else:
+            picture = ''
+
         try:
             email_address = EmailAddress.objects.get(email=email)
             if not email_address.available:
@@ -29,10 +36,11 @@ class WadiumSocialAccountAdapter(DefaultSocialAccountAdapter):
                 return user
         except EmailAddress.DoesNotExist:
             pass
+
         userprofile = {
             'email': email,
             'name': sociallogin.account.extra_data['name'],
-            'profile_image': sociallogin.account.extra_data['picture']
+            'profile_image': picture
         }
         try:
             user = UserProfile.create_user(
