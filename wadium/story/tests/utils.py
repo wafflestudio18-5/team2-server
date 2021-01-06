@@ -25,7 +25,10 @@ body_example = [
         ]
     ]
 
-def make_comment_URI(self, story_pk, comment_id=None):
+from story.models import Story
+
+def make_comment_URI(comment_id=None):
+    pk = Story.objects.last().id
     if comment_id:
         return f'/story/{pk}/comment/?id={comment_id}'
     return f'/story/{pk}/comment/'
