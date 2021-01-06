@@ -25,7 +25,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('user.urls')),
     path('', include('story.urls')),
-    path('accounts/', include('allauth.urls'))
+    path('accounts/', include('user.providers.google.urls')),
 ]
 
 if settings.DEBUG_TOOLBAR:
