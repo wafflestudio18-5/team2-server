@@ -30,7 +30,8 @@ class StoryViewSet(viewsets.GenericViewSet):
     def get_permissions(self):
         if self.action in ('retrieve', 'list', 'comment_list', 'main', 'trending'):
             return (AllowAny(),)
-
+        elif self.request.method.lower() == 'options':
+            return (AllowAny(),)  # Allow CORS preflight request
         return self.permission_classes
 
     def create(self, request):
@@ -50,7 +51,10 @@ class StoryViewSet(viewsets.GenericViewSet):
 
     def retrieve(self, request, pk=None):
         story = self.get_object()
-        return Response(self.get_serializer(story).data)
+        if story.published:
+            return Response(self.get_serializer(story).data)
+        else:
+            return Response({'error': "This story is not published yet"}, status=status.HTTP_404_NOT_FOUND)
 
     def list(self, request):
         queryset = self.get_queryset(). \

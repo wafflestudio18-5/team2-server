@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'user.apps.UserConfig',
     'story.apps.StoryConfig',
+
     'django.contrib.sites',
     # 'sslserver', # apply https on localhost (temp)
 
@@ -59,11 +60,14 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.facebook',
     # 'user.providers.facebook',
 
+
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -207,4 +211,27 @@ ACCOUNT_ADAPTER = "wadium.adapters.WadiumAccountAdapter"
 SOCIALACCOUNT_ADAPTER = "wadium.adapters.WadiumSocialAccountAdapter"
 
 LOGIN_REDIRECT_URL = '/login/success/'  # Not redirected, but used to check
+
+CORS_ALLOWED_ORIGINS = [
+    'https://wadium.shop',
+    'https://www.wadium.shop',
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://wadium.shop',
+    'https://www.wadium.shop',
+]
+
+CORS_ALLOW_METHODS = [
+    'GET',
+    'OPTIONS',
+    'POST',
+    'PUT',
+    'DELETE'
+]
+
+CORS_ALLOW_HEADERS = [
+    'content-type',
+    'authorization',
+]
 
