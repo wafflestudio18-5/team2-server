@@ -7,14 +7,13 @@ from django.core.cache import cache
 
 from .models import Story, StoryComment, StoryRead, StoryTag
 from .serializers import StorySerializer, SimpleStorySerializer, CommentSerializer
-from .paginators import StoryPagination
+from .paginators import StoryPagination, CommentPagination
 
 
 class StoryViewSet(viewsets.GenericViewSet):
     queryset = Story.objects.all()
     serializer_class = StorySerializer
     permission_classes = (IsAuthenticated(),)
-    pagination_class = StoryPagination
 
     cache_story_page1_key = 'story:list-1'
     cache_story_main_key = 'story:main'
@@ -35,6 +34,13 @@ class StoryViewSet(viewsets.GenericViewSet):
         elif self.request.method.lower() == 'options':
             return (AllowAny(),)  # Allow CORS preflight request
         return self.permission_classes
+
+    def get_pagination_class(self):
+        if self.action in ('comment', 'comment_list'):
+            return CommentPagination
+        return StoryPagination
+
+    pagination_class = property(fget=get_pagination_class)
 
     def create(self, request):
         serializer = self.get_serializer(data=request.data)
