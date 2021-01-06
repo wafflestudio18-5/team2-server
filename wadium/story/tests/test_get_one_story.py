@@ -1,4 +1,4 @@
-from django.test import TransactionTestCase, Client
+from django.test import TestCase, Client
 from rest_framework.authtoken.models import Token
 from rest_framework import status
 import json
@@ -7,10 +7,8 @@ from story.models import Story
 from django.contrib.auth.models import User
 from .constants import body_example
 
-class GetOneStoryTestCase(TransactionTestCase):
+class GetOneStoryTestCase(TestCase):
     client = Client()
-    reset_sequences = True
-    
 
     def setUp(self):
         self.client.post(
@@ -38,14 +36,16 @@ class GetOneStoryTestCase(TransactionTestCase):
             content_type='application/json',
             HTTP_AUTHORIZATION=self.user_token
         )
+        story = Story.objects.last()
         self.client.post(
-            '/story/1/publish/',
+            f'/story/{story.id}/publish/',
             HTTP_AUTHORIZATION=self.user_token
         )
 
     def test_get_one_story(self):
+        story = Story.objects.last()
         response = self.client.get(
-            "/story/1/"
+            f'/story/{story.id}/'
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -65,11 +65,12 @@ class GetOneStoryTestCase(TransactionTestCase):
         self.assertNotEqual(data["published_at"], None)
 
     def test_get_draft_story(self):
+        story = Story.objects.last()
         self.client.post(
-            '/story/1/publish/',
+            f'/story/{story.id}/publish/',
             HTTP_AUTHORIZATION=self.user_token
         )
         response = self.client.get(
-            "/story/1/"
+            f'/story/{story.id}/'
         )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

@@ -1,4 +1,4 @@
-from django.test import TransactionTestCase, Client
+from django.test import TestCase, Client
 from rest_framework.authtoken.models import Token
 from rest_framework import status
 import json
@@ -7,10 +7,11 @@ from story.models import Story
 from django.contrib.auth.models import User
 from .constants import body_example
 
-class DeleteStoryTestCase(TransactionTestCase):
+class DeleteStoryTestCase(TestCase):
     client = Client()
-    reset_sequences = True
-    
+
+    def makeURI(self, pk):
+        return f'/story/{pk}/'
 
     def setUp(self):
         self.client.post(
@@ -40,19 +41,18 @@ class DeleteStoryTestCase(TransactionTestCase):
         )
 
     def test_delete_story(self):
-        self.assertEqual(Story.objects.count(), 1)
-        self.assertEqual(Story.objects.get(title="Hello").id, 1)
-        
+        story = Story.objects.last() 
         response = self.client.delete(
-            "/story/1/",
+            self.makeURI(story.id),
             HTTP_AUTHORIZATION=self.user_token
         )
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_delete_story_without_token(self):
+        story = Story.objects.last() 
         response = self.client.delete(
-            "/story/1/"
+            self.makeURI(story.id),
         )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -71,8 +71,9 @@ class DeleteStoryTestCase(TransactionTestCase):
         )
         self.user2_token = 'Token ' + Token.objects.get(user__username='seoyoon2').key
 
+        story = Story.objects.last() 
         response = self.client.delete(
-            "/story/1/",
+            self.makeURI(story.id),
             HTTP_AUTHORIZATION=self.user2_token
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

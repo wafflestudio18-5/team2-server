@@ -1,4 +1,4 @@
-from django.test import TransactionTestCase, Client
+from django.test import TestCase, Client
 from rest_framework.authtoken.models import Token
 from rest_framework import status
 import json
@@ -7,9 +7,11 @@ from story.models import Story
 from django.contrib.auth.models import User
 from .constants import body_example
 
-class PublishStoryTestCase(TransactionTestCase):
+class PublishStoryTestCase(TestCase):
     client = Client()
-    reset_sequences = True
+
+    def makeURI(self, pk):
+        return f'/story/{pk}/publish/'
 
     def setUp(self):
         self.client.post(
@@ -39,17 +41,14 @@ class PublishStoryTestCase(TransactionTestCase):
         )
 
     def test_publish_story(self):
-        self.assertEqual(Story.objects.count(), 1)
-        self.assertEqual(Story.objects.get(title="Hello").id, 1)
-
+        story = Story.objects.last()
         response = self.client.post(
-            '/story/1/publish/',
+            self.makeURI(story.id),
             HTTP_AUTHORIZATION=self.user_token
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
         self.assertIn("id", data)
-        self.assertEqual(data['id'], 1)
         self.assertIn("writer", data)
         self.assertEqual(data["writer"]["username"], "seoyoon")
         self.assertEqual(data["title"], "Hello")
@@ -60,30 +59,38 @@ class PublishStoryTestCase(TransactionTestCase):
         self.assertIn("updated_at", data)
 
         self.assertTrue(data["published"])
-        self.assertNotEqual(data["published_at"], None)
+        self.assertIsNotNone(data["published_at"])
 
-        story = Story.objects.get(id=1)
-        self.assertTrue(story.published)
-        self.assertNotEqual(story.published_at, None)
+        with self.subTest(msg='Cheking DB'):
+            story = Story.objects.last()
+            self.assertTrue(story.published)
+            self.assertIsNotNone(story.published_at)
 
         # unpublish again
         response = self.client.post(
-            '/story/1/publish/',
+            self.makeURI(story.id),
             HTTP_AUTHORIZATION=self.user_token
         )
         data = response.json()
         self.assertFalse(data["published"])
-        self.assertEqual(data["published_at"], None)
+        self.assertIsNone(data["published_at"])
 
-        story = Story.objects.get(id=1)
-        self.assertFalse(story.published)
-        self.assertEqual(story.published_at, None)
+        with self.subTest(msg='Cheking DB'):
+            story = Story.objects.last()
+            self.assertFalse(story.published)
+            self.assertIsNone(story.published_at)
 
     def test_publish_story_without_token(self):
+        story = Story.objects.last()
         response = self.client.post(
-            '/story/1/publish/',
+            self.makeURI(story.id)
         )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        with self.subTest(msg='Cheking DB'):
+            story = Story.objects.last()
+            self.assertFalse(story.published)
+            self.assertIsNone(story.published_at)
 
     def test_puslish_others_story(self):
         self.client.post(
@@ -100,9 +107,14 @@ class PublishStoryTestCase(TransactionTestCase):
         )
         self.user2_token = 'Token ' + Token.objects.get(user__username='seoyoon2').key
 
+        story = Story.objects.last()
         response = self.client.post(
-            '/story/1/publish/',
+            self.makeURI(story.id),
             HTTP_AUTHORIZATION=self.user2_token
         )
-
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        with self.subTest(msg='Cheking DB'):
+            story = Story.objects.last()
+            self.assertFalse(story.published)
+            self.assertIsNone(story.published_at)

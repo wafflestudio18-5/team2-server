@@ -1,4 +1,4 @@
-from django.test import TransactionTestCase, Client
+from django.test import TestCase, Client
 from rest_framework.authtoken.models import Token
 from rest_framework import status
 import json
@@ -8,12 +8,14 @@ from story.models import Story
 from django.contrib.auth.models import User
 from .constants import body_example
 
-class PostStoryTestCase(TransactionTestCase):
+class EditStoryTestCase(TestCase):
     client = Client()
-    reset_sequences = True
+
+    def makeURI(self, pk):
+        return f'/story/{pk}/'
 
     def setUp(self):
-        # create users
+        # create user
         self.client.post(
             '/user/',
             json.dumps({
@@ -40,13 +42,10 @@ class PostStoryTestCase(TransactionTestCase):
             HTTP_AUTHORIZATION=self.user_token
         )
 
-    def test_edit_story(self):
-        # create one story
-        self.assertEqual(Story.objects.count(), 1)
-        self.assertEqual(Story.objects.get(title="First Wadium Story").id, 1)
-
+    def test_edit_story_all(self):
+        story = Story.objects.last()
         response = self.client.put(
-            '/story/1/',
+            self.makeURI(story.id),
             json.dumps({
                 "title": "New Title",
                 "subtitle": "New subtitle",
@@ -60,7 +59,6 @@ class PostStoryTestCase(TransactionTestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
         self.assertIn("id", data)
-        self.assertEqual(data['id'], 1)
         self.assertIn("writer", data)
         self.assertEqual(data["writer"]["username"], "seoyoon")
         self.assertEqual(data["title"], "New Title")
@@ -72,11 +70,17 @@ class PostStoryTestCase(TransactionTestCase):
         self.assertIn("updated_at", data)
         self.assertEqual(data["published_at"], None)
 
-        story = Story.objects.get(id=1)
-        self.assertEqual(story.title, "New Title")
+        with self.subTest(msg='Checking DB'):
+            story = Story.objects.last()
+            self.assertEqual(story.title, "New Title")
+            self.assertEqual(story.subtitle, "New subtitle")
+            self.assertEqual(story.body, {})
+            self.assertEqual(story.featured_image, "https://wadium.shop/image/")
 
+    def test_edit_story_title(self):
+        story = Story.objects.last()
         response = self.client.put(
-            '/story/1/',
+            self.makeURI(story.id),
             json.dumps({
                 "title": ""
             }),
@@ -86,14 +90,21 @@ class PostStoryTestCase(TransactionTestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
         self.assertEqual(data["title"], "Untitled")
-        self.assertEqual(data["subtitle"], "New subtitle")
-        self.assertEqual(data["body"], {})
-        self.assertEqual(data["featured_image"], 'https://wadium.shop/image/')
-        story = Story.objects.get(id=1)
-        self.assertEqual(story.title, "Untitled")
+        self.assertEqual(data["subtitle"], "This story has no content")
+        self.assertEqual(data["body"], body_example)
+        self.assertEqual(data["featured_image"], "")
 
+        with self.subTest(msg='Checking DB'):
+            story = Story.objects.last()
+            self.assertEqual(story.title, "Untitled")
+            self.assertEqual(story.subtitle, "This story has no content")
+            self.assertEqual(story.body, body_example)
+            self.assertEqual(story.featured_image, "")
+
+    def test_edit_story_subtitle(self):
+        story = Story.objects.last()
         response = self.client.put(
-            '/story/1/',
+            self.makeURI(story.id),
             json.dumps({
                 "subtitle": ""
             }),
@@ -102,13 +113,22 @@ class PostStoryTestCase(TransactionTestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
-        self.assertEqual(data["title"], "Untitled")
+        self.assertEqual(data["title"], "First Wadium Story")
         self.assertEqual(data["subtitle"], "")
-        self.assertEqual(data["body"], {})
-        self.assertEqual(data["featured_image"], 'https://wadium.shop/image/')
+        self.assertEqual(data["body"], body_example)
+        self.assertEqual(data["featured_image"], "")
+
+        with self.subTest(msg='Checking DB'):
+            story = Story.objects.last()
+            self.assertEqual(story.title, "First Wadium Story")
+            self.assertEqual(story.subtitle, "")
+            self.assertEqual(story.body, body_example)
+            self.assertEqual(story.featured_image, "")
         
+    def test_edit_story_body(self):
+        story = Story.objects.last()
         response = self.client.put(
-            '/story/1/',
+            self.makeURI(story.id),
             json.dumps({
                 "body": []
             }),
@@ -117,30 +137,61 @@ class PostStoryTestCase(TransactionTestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
-        self.assertEqual(data["title"], "Untitled")
-        self.assertEqual(data["subtitle"], "")
+        self.assertEqual(data["title"], "First Wadium Story")
+        self.assertEqual(data["subtitle"], "This story has no content")
         self.assertEqual(data["body"], [])
-        self.assertEqual(data["featured_image"], 'https://wadium.shop/image/')
+        self.assertEqual(data["featured_image"], "")
+
+        with self.subTest(msg='Checking DB'):
+            story = Story.objects.last()
+            self.assertEqual(story.title, "First Wadium Story")
+            self.assertEqual(story.subtitle, "This story has no content")
+            self.assertEqual(story.body, [])
+            self.assertEqual(story.featured_image, "")
         
+    def test_edit_story_image(self):
+        story = Story.objects.last()    
         response = self.client.put(
-            '/story/1/',
+            self.makeURI(story.id),
             json.dumps({
-                "featured_image": ""
+                "featured_image": "https://wadium.shop/image/"
             }),
             content_type='application/json',
             HTTP_AUTHORIZATION=self.user_token
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
-        self.assertEqual(data["title"], "Untitled")
-        self.assertEqual(data["subtitle"], "")
-        self.assertEqual(data["body"], [])
-        self.assertEqual(data["featured_image"], "")
-        
+        self.assertEqual(data["title"], "First Wadium Story")
+        self.assertEqual(data["subtitle"], "This story has no content")
+        self.assertEqual(data["body"], body_example)
+        self.assertEqual(data["featured_image"], "https://wadium.shop/image/")
+
+        with self.subTest(msg='Checking DB'):
+            story = Story.objects.last()
+            self.assertEqual(story.title, "First Wadium Story")
+            self.assertEqual(story.subtitle, "This story has no content")
+            self.assertEqual(story.body, body_example)
+            self.assertEqual(story.featured_image, "https://wadium.shop/image/")
+
+    def test_edit_story_invalid_URL(self):
+        story = Story.objects.last()
+        response = self.client.put(
+            self.makeURI(story.id),
+            json.dumps({
+                "featured_image": "wadium.shop/image/"
+            }),
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.user_token
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        with self.subTest(msg='Checking DB'):
+            story = Story.objects.last()
+            self.assertEqual(story.featured_image, "")
 
     def test_edit_story_without_token(self):
+        story = Story.objects.last()
         response = self.client.put(
-            '/story/1/',
+            self.makeURI(story.id),
             json.dumps({
                 "title": "",
                 "body": []
@@ -148,9 +199,11 @@ class PostStoryTestCase(TransactionTestCase):
             content_type='application/json'
         )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        story = Story.objects.get(id=1)
-        self.assertEqual(story.title, "First Wadium Story")
-        self.assertEqual(story.body, body_example)
+        
+        with self.subTest(msg='Checking DB'):
+            story = Story.objects.last()
+            self.assertEqual(story.title, "First Wadium Story")
+            self.assertEqual(story.body, body_example)
 
     def test_edit_others_story(self):
         self.client.post(
@@ -167,8 +220,9 @@ class PostStoryTestCase(TransactionTestCase):
         )
         self.user2_token = 'Token ' + Token.objects.get(user__username='seoyoon2').key
         
+        story = Story.objects.last()
         response = self.client.put(
-            '/story/1/',
+            self.makeURI(story.id),
             json.dumps({
                 "title": "",
                 "body": []
@@ -177,6 +231,8 @@ class PostStoryTestCase(TransactionTestCase):
             HTTP_AUTHORIZATION=self.user2_token
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        story = Story.objects.get(id=1)
-        self.assertEqual(story.title, "First Wadium Story")
-        self.assertEqual(story.body, body_example)
+        
+        with self.subTest(msg='Checking DB'):
+            story = Story.objects.last()
+            self.assertEqual(story.title, "First Wadium Story")
+            self.assertEqual(story.body, body_example)

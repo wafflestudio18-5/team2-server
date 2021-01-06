@@ -56,9 +56,7 @@ class PostStoryTestCase(TestCase):
         self.assertEqual(data["published_at"], None)
 
         with self.subTest(msg='Checking DB - first story'):
-            # Check if this story is saved in DB
             story = Story.objects.last()
-            self.assertEqual(story.id, 1)
             self.assertEqual(story.title, "First Wadium Story")
 
         # with some blank values
@@ -90,12 +88,10 @@ class PostStoryTestCase(TestCase):
         self.assertEqual(data["published_at"], None)
 
         with self.subTest(msg='Checking DB - second story'):
-            # Check if this story is saved in DB
             story = Story.objects.last()
-            self.assertEqual(story.id, 2)
             self.assertEqual(story.title, "Untitled")
 
-    def 
+    def test_post_story_incomplete_request_no_title(self):
     # w/o title
         response = self.client.post(
             '/story/',
@@ -123,7 +119,7 @@ class PostStoryTestCase(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         
-    
+    def test_post_story_incomplete_request_no_image(self):
         # w/o featued_image
         response = self.client.post(
             '/story/',
@@ -131,21 +127,6 @@ class PostStoryTestCase(TestCase):
                 "title": "Hello",
                 "subtitle": "This story has no content",
                 "body": body_example,
-            }),
-            content_type='application/json',
-            HTTP_AUTHORIZATION=self.user_token
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        
-    def test_post_story_incomplete_request_invalid_json(self):  
-        # w/ invalid json
-        response = self.client.post(
-            '/story/',
-            json.dumps({
-                "title": "First Wadium Story",
-                "subtitle": "This story has no content",
-                "body": [', '[{"key": "value",}],
-                "featured_image": "https://wadium.shop/image/"
             }),
             content_type='application/json',
             HTTP_AUTHORIZATION=self.user_token
