@@ -5,7 +5,7 @@ from django.utils import timezone
 from django.shortcuts import get_object_or_404
 
 from .serializers import UserSerializer, UserLoginSerializer, UserSelfSerializer, UserSocialSerializer, \
-    MyStorySerializer, UserStorySerializer
+    MyStorySerializer, UserStorySerializer, UserProfileSerializer
 from .models import EmailAddress, EmailAuth, UserProfile
 from .permissions import UserAccessPermission
 from story.paginators import StoryPagination
@@ -126,17 +126,20 @@ class UserViewSet(viewsets.GenericViewSet):
             return Response({
                 'error': 'username query is required.'
             }, status=status.HTTP_400_BAD_REQUEST)
+
         users = self.get_queryset().filter(username__icontains=username).select_related('userprofile')
         if users.count() == 0:
             return Response(status=status.HTTP_404_NOT_FOUND)
         else:
-            return Response(self.get_serializer(users, many=True).data)
+            # userprofiles = UserProfile.objects.filter(user)
+            return Response(self.get_serializer(userprofiles, many=True).data)
 
     @action(detail=True, methods=['GET'])
     def about(self, request, pk):
         user = request.user if pk == 'me' else self.get_object()
         if user.is_authenticated:
-            return Response(self.get_serializer(user).data)
+            profile = user.userprofile
+            return Response(self.get_serializer(profile).data)
         else:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
@@ -164,9 +167,11 @@ class UserViewSet(viewsets.GenericViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def get_serializer_class(self):
-        if self.action == 'update' or self.action == 'retrieve':
+        if self.action == 'update' or self.action == 'retrieve' :
             return UserSelfSerializer
-        else:
+        elif self.action == 'about' or self.action == 'list':
+            return UserProfileSerializer
+        else :
             return UserSerializer
 
     @action(detail=True, methods=['GET'])

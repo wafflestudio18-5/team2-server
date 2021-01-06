@@ -173,21 +173,37 @@ class UserLoginSerializer(serializers.ModelSerializer):
             raise NotImplementedError()
 
 
-class UserSelfSerializer(serializers.ModelSerializer):
+class UserProfileSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
     name = serializers.CharField()
     bio = serializers.CharField(required=False)
     profile_image = serializers.URLField(required=False)
     email = serializers.CharField(read_only=True)
-    connection = serializers.SerializerMethodField()
+    created_at = serializers.DateTimeField()
 
     class Meta:
         model = UserProfile
         fields = (
+            'username',
             'name',
             'bio',
             'profile_image',
             'email',
-            'connection'
+            'created_at',
+        )
+
+
+class UserSelfSerializer(UserProfileSerializer):
+    connection = serializers.SerializerMethodField()
+    class Meta:
+        model = UserProfile
+        fields = (
+            'username',
+            'name',
+            'bio',
+            'profile_image',
+            'email',
+            'connection',
         )
 
     def get_connection(self, user):
