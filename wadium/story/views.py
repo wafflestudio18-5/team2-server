@@ -30,6 +30,8 @@ class StoryViewSet(viewsets.GenericViewSet):
     def get_permissions(self):
         if self.action in ('retrieve', 'list', 'comment_list', 'main', 'trending'):
             return (AllowAny(),)
+        elif self.request.method.lower() == 'options':
+            return (AllowAny(),)  # Allow CORS preflight request
         return self.permission_classes
 
     def create(self, request):
