@@ -1,15 +1,14 @@
-from django.test import TransactionTestCase, Client
+from django.test import TestCase, Client
 from rest_framework.authtoken.models import Token
 from rest_framework import status
 import json
 
-from story.models import StoryComment
+from story.models import Story, StoryComment
 from django.contrib.auth.models import User
-from .constants import body_example
+from .utils import body_example, make_comment_URI
 
-class PostCommentTestCase(TransactionTestCase):
+class PostCommentTestCase(TestCase):
     client = Client()
-    reset_sequences = True
 
     def setUp(self):
         self.client.post(
@@ -52,14 +51,15 @@ class PostCommentTestCase(TransactionTestCase):
             HTTP_AUTHORIZATION=self.user_token
         )
 
+        story = Story.objects.last()
         self.client.post(
-            '/story/1/publish/',
+            f'/story/{story.id}/publish/',
             HTTP_AUTHORIZATION=self.user_token
         )
 
     def test_post_comment(self):
         response = self.client.post(
-            '/story/1/comment/',
+            make_comment_URI(),
             json.dumps({
                 "body": "This is useful"
             }),
@@ -69,14 +69,91 @@ class PostCommentTestCase(TransactionTestCase):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         data = response.json()
-        self.assertEqual(data['id'], 1)
-        self.assertEqual(data['story_id'], 1)
+        self.assertIn('id', data)
+        self.assertIn('story_id', data)
         self.assertIn('writer', data)
         self.assertEqual(data['writer']['username'], 'seoyoon2')
         self.assertEqual(data['body'], "This is useful")
         self.assertIn('created_at', data)
         self.assertIn('updated_at', data)
 
-        comment = StoryComment.objects.get(id=1)
-        self.assertEqual(comment.story_id, 1)
-        self.assertEqual(comment.body, "This is useful")
+        with self.subTest(msg='Checking DB'):
+            comment = StoryComment.objects.last()
+            self.assertEqual(comment.body, "This is useful")
+
+    def test_post_comment_to_oneself(self):
+        response = self.client.post(
+            make_comment_URI(),
+            json.dumps({
+                "body": "Thank you!"
+            }),
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.user_token
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        data = response.json()
+        self.assertIn('id', data)
+        self.assertIn('story_id', data)
+        self.assertIn('writer', data)
+        self.assertEqual(data['writer']['username'], 'seoyoon')
+        self.assertEqual(data['body'], "Thank you!")
+        self.assertIn('created_at', data)
+        self.assertIn('updated_at', data)
+
+        with self.subTest(msg='Checking DB'):
+            comment = StoryComment.objects.last()
+            self.assertEqual(comment.body, "Thank you!")
+
+    def test_post_comment_to_draft(self):
+        story = Story.objects.last()
+        self.client.post(
+            f'/story/{story.id}/publish/',
+            HTTP_AUTHORIZATION=self.user_token
+        )
+        with self.subTest(msg='assert that this is draft'):
+            story = Story.objects.last()
+            self.assertFalse(story.published)
+            self.assertIsNone(story.published_at)
+
+        response = self.client.post(
+            make_comment_URI(),
+            json.dumps({
+                "body": "Great job!"
+            }),
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.user2_token
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_post_comment_without_token(self):
+        response = self.client.post(
+            make_comment_URI(),
+            json.dumps({
+                "body": "Great job!"
+            }),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_post_comment_without_body(self):
+        response = self.client.post(
+            make_comment_URI(),
+            json.dumps({
+                
+            }),
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.user2_token
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    
+    def test_post_comment_blank_body(self):
+        response = self.client.post(
+            make_comment_URI(),
+            json.dumps({
+                "body": ""
+            }),
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.user2_token
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
