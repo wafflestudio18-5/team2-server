@@ -179,7 +179,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     bio = serializers.CharField(required=False)
     profile_image = serializers.URLField(required=False)
     email = serializers.CharField(read_only=True)
-    created_at = serializers.DateTimeField()
+    created_at = serializers.DateTimeField(format="%Y-%m-%d")
 
     class Meta:
         model = UserProfile

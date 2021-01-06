@@ -127,11 +127,10 @@ class UserViewSet(viewsets.GenericViewSet):
                 'error': 'username query is required.'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        users = self.get_queryset().filter(username__icontains=username).select_related('userprofile')
-        if users.count() == 0:
+        userprofiles = UserProfile.objects.filter(user__username__icontains=username)
+        if userprofiles.count() == 0:
             return Response(status=status.HTTP_404_NOT_FOUND)
         else:
-            # userprofiles = UserProfile.objects.filter(user)
             return Response(self.get_serializer(userprofiles, many=True).data)
 
     @action(detail=True, methods=['GET'])
