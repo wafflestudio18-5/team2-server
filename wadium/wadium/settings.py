@@ -10,8 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 
-from pathlib import Path
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -46,7 +46,16 @@ INSTALLED_APPS = [
     'user.apps.UserConfig',
     'story.apps.StoryConfig',
     'corsheaders',
+    'django.contrib.sites',
+
+    # allauth
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'user.providers.google',
 ]
+
+SITE_ID = 1
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -176,3 +185,15 @@ CORS_ALLOW_HEADERS = [
     'content-type',
     'authorization',
 ]
+
+ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = False
+SOCIALACCOUNT_QUERY_EMAIL = True
+
+ACCOUNT_EMAIL_REQUIRED = True
+SOCIALACCOUNT_EMAIL_REQUIRED = True
+SOCIALACCOUNT_AUTO_SIGNUP = True
+
+ACCOUNT_ADAPTER = "wadium.adapters.WadiumAccountAdapter"
+SOCIALACCOUNT_ADAPTER = "wadium.adapters.WadiumSocialAccountAdapter"
+
+LOGIN_REDIRECT_URL = '/login/success/'  # Not redirected, but used to check
