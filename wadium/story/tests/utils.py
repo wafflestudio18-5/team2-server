@@ -24,3 +24,8 @@ body_example = [
             }
         ]
     ]
+
+def make_comment_URI(self, story_pk, comment_id=None):
+    if comment_id:
+        return f'/story/{pk}/comment/?id={comment_id}'
+    return f'/story/{pk}/comment/'
