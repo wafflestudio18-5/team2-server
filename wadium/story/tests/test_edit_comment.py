@@ -127,7 +127,7 @@ class EditCommentTestCase(TestCase):
             content_type='application/json'
         )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        
+
     def test_edit_others_comment(self):
         comment = StoryComment.objects.last()
         response = self.client.put(
@@ -139,3 +139,20 @@ class EditCommentTestCase(TestCase):
             HTTP_AUTHORIZATION=self.user_token
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_edit_comment_to_draft(self):
+        story = Story.objects.last()
+        self.client.post(
+            f'/story/{story.id}/publish/',
+            HTTP_AUTHORIZATION=self.user_token
+        )
+        comment = StoryComment.objects.last()
+        response = self.client.put(
+            make_comment_URI(comment.id),
+            json.dumps({
+                "body": "New comment!"
+            }),
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.user2_token
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
