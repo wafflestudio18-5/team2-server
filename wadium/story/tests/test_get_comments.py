@@ -66,14 +66,14 @@ class EditCommentTestCase(TestCase):
                 content_type='application/json',
                 HTTP_AUTHORIZATION=self.user2_token
             )
-        self.assertEqual(StoryComment.objects.all().count(), 15)
+        self.assertEqual(StoryComment.objects.count(), 15)
 
     def test_get_comments(self):
         response = self.client.get(
             make_comment_URI()
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        comment_count = StoryComment.objects.all().count()
+        comment_count = StoryComment.objects.count()
         self.assertGreater(comment_count, 10)
         self.assertLessEqual(comment_count, 20)
         data = response.json()
