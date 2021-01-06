@@ -1,11 +1,12 @@
 from allauth.account.adapter import DefaultAccountAdapter
+from allauth.exceptions import ImmediateHttpResponse
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
-from user.models import UserProfile, EmailAddress
+from django.http import HttpResponseBadRequest
 from rest_framework.authtoken.models import Token
 from rest_framework.serializers import ValidationError
-from allauth.exceptions import ImmediateHttpResponse
-from django.http import HttpResponseBadRequest
-from user.serializers import *
+
+from user.models import UserProfile, EmailAddress
+
 
 class WadiumAccountAdapter(DefaultAccountAdapter):
     def is_open_for_signup(self, request):
@@ -18,6 +19,13 @@ class WadiumSocialAccountAdapter(DefaultSocialAccountAdapter):
 
     def save_user(self, request, sociallogin, form=None):
         email = sociallogin.account.extra_data['email']
+        if sociallogin.account.provider == 'facebook_no_redirect':
+            picture = sociallogin.account.extra_data['picture']['data']['url']
+        elif sociallogin.account.provider == 'google_no_redirect':
+            picture = sociallogin.account.extra_data['picture']
+        else:
+            picture = ''
+
         try:
             email_address = EmailAddress.objects.get(email=email)
             if not email_address.available:
@@ -29,32 +37,20 @@ class WadiumSocialAccountAdapter(DefaultSocialAccountAdapter):
         except EmailAddress.DoesNotExist:
             pass
 
-        if sociallogin.account.provider == 'google':
-            userprofile = {
-                'email': email,
-                'name': sociallogin.account.extra_data['name'],
-                'profile_image': sociallogin.account.extra_data['picture']
-            }
-
-        elif sociallogin.account.provider == "facebook":
-            userprofile = {
-                'email': email,
-                'name': sociallogin.account.extra_data['name'],
-                'profile_image': sociallogin.account.extra_data['picture']['data']['url']
-            }
-
+        userprofile = {
+            'email': email,
+            'name': sociallogin.account.extra_data['name'],
+            'profile_image': picture
+        }
         try:
             user = UserProfile.create_user(
-                UserProfile.get_unique_username(sociallogin.account.extra_data['email']), userprofile)
+                UserProfile.get_unique_username(sociallogin.account.extra_data['email']),
+                userprofile)
         except ValidationError as e:
             res = HttpResponseBadRequest(str(e.detail))
             raise ImmediateHttpResponse(res)
 
         Token.objects.create(user=user)
-        # print(sociallogin.account.provider)
-        # TODO create usergoogle(id, email_address, ...), userfacebook(id)
-        # TODO usergoogle은 처음에 인증 정보를 저장하기 위해 만든 model인데, allauth를 사용하면서 필요가 없어졌습니다.
-        # TODO connections 확인 용도 외에는 필요가 없어서 usergoogle이나 userfacebook 구현은 미뤄도 될 것 같습니다.
         sociallogin.user = user
         sociallogin.save(request)
         return user

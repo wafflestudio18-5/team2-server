@@ -3,14 +3,15 @@ from allauth.socialaccount.providers.google.views import (
     OAuth2LoginView,
     GoogleOAuth2Adapter,
 )
-from django.http import HttpResponseRedirect
 from django.conf import settings
-from .provider import GoogleProviderNoRedirect
-from user.serializers import UserSerializer
+from django.http import HttpResponseRedirect
+from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework import status
+
+from user.serializers import UserSerializer
+from .provider import GoogleProviderNoRedirect
 
 
 class SocialLoginView(APIView):
@@ -44,7 +45,13 @@ class TokenOAuth2CallbackView(OAuth2CallbackView):
     def dispatch(self, request, *args, **kwargs):
         api_view = SocialLoginView()
         api_view.dispatch(request, *args, **kwargs)
-        res = super(TokenOAuth2CallbackView, self).dispatch(request, *args, **kwargs)
+        try:
+            res = super(TokenOAuth2CallbackView, self).dispatch(request, *args, **kwargs)
+        except:
+            res = Response({
+                'error': 'An error occurred in social login.',
+            }, status=status.HTTP_400_BAD_REQUEST)
+            return api_view.render(res)
         if isinstance(res, HttpResponseRedirect) and res.url == settings.LOGIN_REDIRECT_URL:
             assert hasattr(request, 'user')
             # login success
