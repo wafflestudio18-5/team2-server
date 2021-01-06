@@ -157,7 +157,11 @@ class StoryViewSet(viewsets.GenericViewSet):
 
         story = self.get_object()
         if not story.published:
+<<<<<<< HEAD
             return Response({'error': "This story is not published yet"}, status=status.HTTP_404_NOT_FOUND)
+=======
+            return Response({'error': "This story is not published yet"}, status=status.HTTP_400_BAD_REQUEST)
+>>>>>>> 575bf8e... Modify to add a comment only after the story is published
 
         if request.method == 'POST':
             serializer = CommentSerializer(data=request.data, context={'story': story, 'user': request.user})
