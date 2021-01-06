@@ -1,4 +1,4 @@
-from django.test import TransactionTestCase, Client
+from django.test import TestCase, Client
 from rest_framework.authtoken.models import Token
 from rest_framework import status
 import json
@@ -8,9 +8,8 @@ from story.models import Story
 from django.contrib.auth.models import User
 from .constants import body_example
 
-class PostStoryTestCase(TransactionTestCase):
+class PostStoryTestCase(TestCase):
     client = Client()
-    reset_sequences = True
 
     def setUp(self):
         self.client.post(
@@ -56,9 +55,11 @@ class PostStoryTestCase(TransactionTestCase):
         self.assertIn("updated_at", data)
         self.assertEqual(data["published_at"], None)
 
-        # Check if this story is saved in DB
-        story = Story.objects.get(id=1)
-        self.assertEqual(story.title, "First Wadium Story")
+        with self.subTest(msg='Checking DB - first story'):
+            # Check if this story is saved in DB
+            story = Story.objects.last()
+            self.assertEqual(story.id, 1)
+            self.assertEqual(story.title, "First Wadium Story")
 
         # with some blank values
         response = self.client.post(
@@ -88,11 +89,13 @@ class PostStoryTestCase(TransactionTestCase):
         self.assertIn("updated_at", data)
         self.assertEqual(data["published_at"], None)
 
-        # Check if this story is saved in DB
-        story = Story.objects.get(id=2)
-        self.assertEqual(story.title, "Untitled")
+        with self.subTest(msg='Checking DB - second story'):
+            # Check if this story is saved in DB
+            story = Story.objects.last()
+            self.assertEqual(story.id, 2)
+            self.assertEqual(story.title, "Untitled")
 
-    def test_post_story_incomplete_request(self):
+    def 
     # w/o title
         response = self.client.post(
             '/story/',
@@ -105,6 +108,8 @@ class PostStoryTestCase(TransactionTestCase):
             HTTP_AUTHORIZATION=self.user_token
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+       
+    def test_post_story_incomplete_request_no_body(self):
         # w/o body
         response = self.client.post(
             '/story/',
@@ -117,6 +122,8 @@ class PostStoryTestCase(TransactionTestCase):
             HTTP_AUTHORIZATION=self.user_token
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        
+    
         # w/o featued_image
         response = self.client.post(
             '/story/',
@@ -129,22 +136,23 @@ class PostStoryTestCase(TransactionTestCase):
             HTTP_AUTHORIZATION=self.user_token
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        
+    def test_post_story_incomplete_request_invalid_json(self):  
         # w/ invalid json
-        # response = self.client.post(
-        #     '/story/',
-        #     json.dumps({
-        #         "title": "First Wadium Story",
-        #         "subtitle": "This story has no content",
-        #         "body": {
-        #                     'hello': 'hi',
-        #                     "key": "me",
-        #                 },
-        #         "featured_image": "https://wadium.shop/image/"
-        #     }),
-        #     content_type='application/json',
-        #     HTTP_AUTHORIZATION=self.user_token
-        # )
-        # self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        response = self.client.post(
+            '/story/',
+            json.dumps({
+                "title": "First Wadium Story",
+                "subtitle": "This story has no content",
+                "body": [', '[{"key": "value",}],
+                "featured_image": "https://wadium.shop/image/"
+            }),
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.user_token
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        
+    def test_post_story_incomplete_request_invalid_url(self):    
         # w/ invalid url
         response = self.client.post(
             '/story/',
