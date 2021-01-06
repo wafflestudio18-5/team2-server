@@ -45,11 +45,13 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'user.apps.UserConfig',
     'story.apps.StoryConfig',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -151,3 +153,26 @@ STATIC_URL = '/static/'
 # Mailjet API
 MAILJET_API_KEY = os.getenv('MAILJET_API_KEY')
 MAILJET_API_SECRET = os.getenv('MAILJET_API_SECRET')
+
+CORS_ALLOWED_ORIGINS = [
+    'https://wadium.shop',
+    'https://www.wadium.shop',
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://wadium.shop',
+    'https://www.wadium.shop',
+]
+
+CORS_ALLOW_METHODS = [
+    'GET',
+    'OPTIONS',
+    'POST',
+    'PUT',
+    'DELETE'
+]
+
+CORS_ALLOW_HEADERS = [
+    'content-type',
+    'authorization',
+]
