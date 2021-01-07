@@ -1,21 +1,20 @@
 from django.contrib.auth import login, logout
 from django.contrib.auth.models import User
-from django.core.paginator import Paginator
 from django.db import transaction
-from django.utils import timezone
 from django.shortcuts import get_object_or_404
-
-from .serializers import UserSerializer, UserLoginSerializer, UserSelfSerializer, UserSocialSerializer, MyStorySerializer, UserStorySerializer, UserProfileSerializer
-from .models import EmailAddress, EmailAuth, UserProfile
-from .permissions import UserAccessPermission
-from .paginators import UserPagination
-from story.paginators import StoryPagination
-
+from django.utils import timezone
 from rest_framework import status, viewsets
-from rest_framework.response import Response
+from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.authtoken.models import Token
+from rest_framework.response import Response
+
+from story.paginators import StoryPagination
+from .models import EmailAddress, EmailAuth, UserProfile
+from .paginators import UserPagination
+from .permissions import UserAccessPermission
+from .serializers import UserSerializer, UserLoginSerializer, UserSelfSerializer, MyStorySerializer, \
+    UserStorySerializer, UserProfileSerializer
 
 
 class UserViewSet(viewsets.GenericViewSet):
@@ -44,7 +43,8 @@ class UserViewSet(viewsets.GenericViewSet):
         else:
             return self.serializer_class
 
-    def get_pagination_class(self):
+    @property
+    def pagination_class(self):
         if self.action == 'list':
             return UserPagination
         elif self.action == 'story':
