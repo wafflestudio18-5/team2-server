@@ -1,5 +1,6 @@
 from django.contrib.auth import login, logout
 from django.contrib.auth.models import User
+from django.core.paginator import Paginator
 from django.db import transaction
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
@@ -7,6 +8,7 @@ from django.shortcuts import get_object_or_404
 from .serializers import UserSerializer, UserLoginSerializer, UserSelfSerializer, UserSocialSerializer, MyStorySerializer, UserStorySerializer, UserProfileSerializer
 from .models import EmailAddress, EmailAuth, UserProfile
 from .permissions import UserAccessPermission
+from .paginators import UserPagination
 from story.paginators import StoryPagination
 
 from rest_framework import status, viewsets
@@ -19,7 +21,6 @@ from rest_framework.authtoken.models import Token
 class UserViewSet(viewsets.GenericViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    pagination_class = StoryPagination
 
     def get_permissions(self):
         if self.action == 'story':
@@ -42,6 +43,12 @@ class UserViewSet(viewsets.GenericViewSet):
             return UserProfileSerializer
         else:
             return self.serializer_class
+
+    def get_pagination_class(self):
+        if self.action == 'list':
+            return UserPagination
+        elif self.action == 'story':
+            return StoryPagination
 
     def create(self, request):
         serializer = self.get_serializer(data=request.data)
@@ -123,7 +130,7 @@ class UserViewSet(viewsets.GenericViewSet):
         logout(request)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def list(self, request):
+    def list(self, request, *args, **kwargs):
         username = request.query_params.get('username', '')
         if not username:
             return Response({
@@ -134,6 +141,10 @@ class UserViewSet(viewsets.GenericViewSet):
         if userprofiles.count() == 0:
             return Response(status=status.HTTP_404_NOT_FOUND)
         else:
+            page = self.paginate_queryset(userprofiles)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
             return Response(self.get_serializer(userprofiles, many=True).data)
 
     @action(detail=True, methods=['GET'])
