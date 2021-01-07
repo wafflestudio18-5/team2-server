@@ -126,7 +126,6 @@ class GoogleOAuth2NoRedirectAdapter(GoogleOAuth2Adapter):
     def get_callback_url(self, request, app):
         base_url = request.META.get('HTTP_ORIGIN', '')
         if base_url not in (
-                'http://localhost:3000',
                 'https://wadium.shop',
                 'https://www.wadium.shop',
         ):
