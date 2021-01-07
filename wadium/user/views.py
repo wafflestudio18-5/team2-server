@@ -1,11 +1,9 @@
-from django.contrib.auth import login, logout
+from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
-
-from .serializers import UserSerializer, UserLoginSerializer, UserSelfSerializer, UserSocialSerializer, \
-    MyStorySerializer, UserStorySerializer
+from .serializers import UserSerializer, UserLoginSerializer, UserSelfSerializer, UserSocialSerializer, MyStorySerializer, UserStorySerializer
 from .models import EmailAddress, EmailAuth, UserProfile
 from .permissions import UserAccessPermission
 from story.paginators import StoryPagination
@@ -15,7 +13,10 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authtoken.models import Token
+import requests
 
+from django.conf import settings
+#from rest_framework.decorators import permission_classes
 
 class UserViewSet(viewsets.GenericViewSet):
     queryset = User.objects.all()
@@ -76,6 +77,8 @@ class UserViewSet(viewsets.GenericViewSet):
                 })
             elif data['req_type'] == UserSerializer.CREATE:
                 user = serializer.save()
+        elif data['auth_type'] == UserSerializer.OAUTH:
+            pass
         else:
             return Response(status=status.HTTP_501_NOT_IMPLEMENTED)
 
@@ -83,6 +86,7 @@ class UserViewSet(viewsets.GenericViewSet):
         data = serializer.data
         data['token'] = user.auth_token.key
         return Response(data=data, status=status.HTTP_201_CREATED)
+
 
     @action(detail=False, methods=['POST'])
     def login(self, request):
@@ -107,6 +111,8 @@ class UserViewSet(viewsets.GenericViewSet):
                         return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
             elif data['req_type'] == UserLoginSerializer.LOGIN:
                 user = login_serializer.get_user(data)
+        elif data['auth_type'] == UserLoginSerializer.OAUTH:
+            pass
         else:
             return Response(status=status.HTTP_501_NOT_IMPLEMENTED)
 

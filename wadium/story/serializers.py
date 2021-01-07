@@ -3,6 +3,7 @@ from .models import Story, StoryComment
 from user.serializers import UserSerializer
 
 
+
 class StorySerializer(serializers.ModelSerializer):
     writer = UserSerializer(read_only=True)
     title = serializers.CharField(max_length=100, allow_blank=True)
@@ -48,7 +49,7 @@ class StorySerializer(serializers.ModelSerializer):
 
         story = super(StorySerializer, self).update(instance, validated_data)
         return story
-
+      
 
 class SimpleStorySerializer(serializers.ModelSerializer):
     writer = UserSerializer(read_only=True)
@@ -87,3 +88,4 @@ class CommentSerializer(serializers.ModelSerializer):
         validated_data['story'] = self.context['story']
         story = super(CommentSerializer, self).create(validated_data)
         return story
+

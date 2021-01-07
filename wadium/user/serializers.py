@@ -42,11 +42,11 @@ class UserSerializer(serializers.ModelSerializer):
         )
         extra_kwargs = {'username': {'required': False}}
 
-    def validate_auth_type(self, value):
-        if value in (self.OAUTH,):
-            raise serializers.ValidationError(f'{value} is not yet implemented.')
-        else:
-            return value
+    #def validate_auth_type(self, value):
+    #    if value in (self.OAUTH,):
+    #        raise serializers.ValidationError(f'{value} is not yet implemented.')
+    #    else:
+    #        return value
 
     def validate(self, data):
         if data['auth_type'] == self.TEST:
@@ -73,6 +73,11 @@ class UserSerializer(serializers.ModelSerializer):
                 missing = required - set(data.get('userprofile', {}))
                 if missing:
                     raise serializers.ValidationError(f'{missing} is required')
+        elif data['auth_type'] == self.OAUTH:
+            required = {'name', 'email'}
+            missing = required - set(data.get('userprofile', {}))
+            if missing:
+                raise serializers.ValidationError(f'{missing} is required')
         return data
 
     def create(self, validated_data):
@@ -86,6 +91,9 @@ class UserSerializer(serializers.ModelSerializer):
             if userprofile['email'] != email_auth.email_address.email:
                 raise serializers.ValidationError({'email': 'Email does not match.'})
             user = UserProfile.create_user(validated_data['username'], userprofile, test_user=False)
+        elif auth_type == self.OAUTH:
+            user = UserProfile.create_user(**validated_data, test_user=False)
+
         else:
             raise ValueError()
         Token.objects.create(user=user)
@@ -140,6 +148,9 @@ class UserLoginSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError('email is required')
             elif data['req_type'] == self.LOGIN and 'access_token' not in data:
                 raise serializers.ValidationError('access_token is required')
+        elif data['auth_type'] == self.OATUH:
+            if 'username' not in data:
+                raise serializers.ValidationError('username is required')
         return data
 
     def get_user(self, validated_data):
@@ -169,6 +180,10 @@ class UserLoginSerializer(serializers.ModelSerializer):
                 email_auth = get_object_or_404(EmailAuth, token=validated_data['access_token'])
                 email_auth.is_valid(must_be_email=True)
                 return email_auth.email_address.user
+        elif auth_type == self.OAUTH:
+            oauth = get_object_or_404(EmailAuth, token=validated_data['access_token'])
+            oauth.is_valid(must_be_email=True)
+            return oauth.email_address.user
         else:
             raise NotImplementedError()
 
@@ -198,12 +213,14 @@ class UserSocialSerializer(serializers.ModelSerializer):
     google = serializers.CharField(source='user.usergoogle.google_sub', required=False)
     facebook = serializers.CharField(source='user.userfacebook.facebook_sub', required=False)
 
+
     class Meta:
         model = User
         fields = (
             'google',
             'facebook',
         )
+
 
 
 class MyStorySerializer(serializers.ModelSerializer):
@@ -232,3 +249,4 @@ class UserStorySerializer(serializers.ModelSerializer):
             'published_at',
         )
         read_only_fields = fields
+
