@@ -56,21 +56,19 @@ class TokenOAuth2CallbackView(OAuth2CallbackView):
             app = self.adapter.get_provider().get_app(self.request)
             client = self.get_client(self.request, app)
 
-            try:
-                access_token = self.adapter.get_access_token_data(request, app, client)
-                token = self.adapter.parse_token(access_token)
-                token.app = app
-                login = self.adapter.complete_login(
-                    request, app, token, response=access_token
-                )
-                login.token = token
-                # if self.adapter.supports_state:
-                #     login.state = SocialLogin.verify_and_unstash_state(
-                #         request, get_request_param(request, "state")
-                #     )
-                # else:
-                #     login.state = SocialLogin.unstash_state(request)
-
+            access_token = self.adapter.get_access_token_data(request, app, client)
+            token = self.adapter.parse_token(access_token)
+            token.app = app
+            login = self.adapter.complete_login(
+                request, app, token, response=access_token
+            )
+            login.token = token
+            # if self.adapter.supports_state:
+            #     login.state = SocialLogin.verify_and_unstash_state(
+            #         request, get_request_param(request, "state")
+            #     )
+            # else:
+            #     login.state = SocialLogin.unstash_state(request)
             res = complete_social_login(request, login)
         except:
             res = Response({
