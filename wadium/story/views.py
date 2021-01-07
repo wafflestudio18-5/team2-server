@@ -161,7 +161,7 @@ class StoryViewSet(viewsets.GenericViewSet):
         if pk is None:
             return Response({'error': "Primary key is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        story = self.get_object()
+        story = self.get_queryset().only('published').get(pk=pk)
         if not story.published:
             return Response({'error': "This story is not published yet"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -194,13 +194,13 @@ class StoryViewSet(viewsets.GenericViewSet):
 
     @comment.mapping.get
     def comment_list(self, request, pk=None):
-        story = self.get_object()
+        story = self.get_queryset().only('published').get(pk=pk)
         if not story.published:
             return Response({'error': "This story is not published yet"}, status=status.HTTP_404_NOT_FOUND)
         
         queryset = story.comments.all(). \
             order_by('created_at'). \
-            select_related('story', 'writer'). \
+            select_related('writer'). \
             select_related('writer__userprofile')
             
         page = self.paginate_queryset(queryset)

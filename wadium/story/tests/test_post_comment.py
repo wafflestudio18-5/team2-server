@@ -111,10 +111,8 @@ class PostCommentTestCase(TestCase):
             f'/story/{story.id}/publish/',
             HTTP_AUTHORIZATION=self.user_token
         )
-        with self.subTest(msg='assert that this is draft'):
-            story = Story.objects.last()
-            self.assertFalse(story.published)
-            self.assertIsNone(story.published_at)
+        story = Story.objects.last()
+        assert not story.published # assert that this is a draft
 
         response = self.client.post(
             make_comment_URI(),
