@@ -5,7 +5,7 @@ import json
 
 from story.models import Story
 from django.contrib.auth.models import User
-from .constants import body_example
+from .utils import body_example
 
 class DeleteStoryTestCase(TestCase):
     client = Client()
