@@ -59,10 +59,9 @@ class StoryViewSet(viewsets.GenericViewSet):
 
     def retrieve(self, request, pk=None):
         story = self.get_object()
-        if story.published:
+        if story.published or story.writer == request.user:
             return Response(self.get_serializer(story).data)
-        else:
-            return Response({'error': "This story is not published yet"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'error': "This story is not published yet"}, status=status.HTTP_404_NOT_FOUND)
 
     def list(self, request):
         queryset = self.get_queryset(). \
