@@ -45,7 +45,13 @@ class TokenOAuth2CallbackView(OAuth2CallbackView):
     def dispatch(self, request, *args, **kwargs):
         api_view = SocialLoginView()
         api_view.dispatch(request, *args, **kwargs)
-        res = super(TokenOAuth2CallbackView, self).dispatch(request, *args, **kwargs)
+        try:
+            res = super(TokenOAuth2CallbackView, self).dispatch(request, *args, **kwargs)
+        except:
+            res = Response({
+                'error': 'An error occurred in social login.',
+            }, status=status.HTTP_400_BAD_REQUEST)
+            return api_view.render(res)
         if isinstance(res, HttpResponseRedirect) and res.url == settings.LOGIN_REDIRECT_URL:
             assert hasattr(request, 'user')
             # login success
