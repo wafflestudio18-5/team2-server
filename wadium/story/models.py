@@ -29,7 +29,7 @@ class StoryComment(models.Model):
 
 class Tag(models.Model):
     name = models.CharField(max_length=100, unique=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
     
     def __str__(self):
         return self.name

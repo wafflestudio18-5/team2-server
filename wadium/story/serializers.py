@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Story, StoryComment
+from .models import Story, StoryComment, Tag, StoryTag
 from user.serializers import UserSerializer
 
 
@@ -85,5 +85,27 @@ class CommentSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data['writer'] = self.context['user']
         validated_data['story'] = self.context['story']
-        story = super(CommentSerializer, self).create(validated_data)
-        return story
+        comment = super(CommentSerializer, self).create(validated_data)
+        return comment
+
+class TagSerializer(serializers.ModelSerializer):
+    tag_id = serializers.IntegerField(source='tag.id', read_only=True)
+    story_id = serializers.IntegerField(source='story.id', read_only=True)
+    tag_name = serializers.CharField(source='tag.name', max_length=100)
+    
+    class Meta:
+        model = StoryTag
+        fields = (
+            'id',
+            'tag_id',
+            'story_id',
+            'tag_name',
+            'created_at',
+        )
+        read_only_fields = ('created_at',)
+
+    def create(self, validated_data):
+        validated_data['story'] = self.context['story']
+        validated_data['tag'] = self.context['tag']
+        story_tag = super(TagSerializer, self).create(validated_data)
+        return story_tag
