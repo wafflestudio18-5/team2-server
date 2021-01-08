@@ -1,3 +1,4 @@
+from allauth.socialaccount.helpers import complete_social_login
 from allauth.socialaccount.providers.google.views import (
     OAuth2CallbackView,
     OAuth2LoginView,
@@ -46,7 +47,29 @@ class TokenOAuth2CallbackView(OAuth2CallbackView):
         api_view = SocialLoginView()
         api_view.dispatch(request, *args, **kwargs)
         try:
-            res = super(TokenOAuth2CallbackView, self).dispatch(request, *args, **kwargs)
+            if "error" in request.GET or "code" not in request.GET:
+                # Distinguish cancel from error
+                res = Response({
+                    'error': 'An error occurred in social login.',
+                }, status=status.HTTP_400_BAD_REQUEST)
+                return api_view.render(res)
+            app = self.adapter.get_provider().get_app(self.request)
+            client = self.get_client(self.request, app)
+
+            access_token = self.adapter.get_access_token_data(request, app, client)
+            token = self.adapter.parse_token(access_token)
+            token.app = app
+            login = self.adapter.complete_login(
+                request, app, token, response=access_token
+            )
+            login.token = token
+            # if self.adapter.supports_state:
+            #     login.state = SocialLogin.verify_and_unstash_state(
+            #         request, get_request_param(request, "state")
+            #     )
+            # else:
+            #     login.state = SocialLogin.unstash_state(request)
+            res = complete_social_login(request, login)
         except:
             res = Response({
                 'error': 'An error occurred in social login.',
@@ -99,6 +122,16 @@ class TokenOAuth2LoginView(OAuth2LoginView):
 
 class GoogleOAuth2NoRedirectAdapter(GoogleOAuth2Adapter):
     provider_id = GoogleProviderNoRedirect.id
+
+    def get_callback_url(self, request, app):
+        base_url = request.META.get('HTTP_ORIGIN', '')
+        if base_url not in (
+                'https://wadium.shop',
+                'https://www.wadium.shop',
+        ):
+            return super(GoogleOAuth2NoRedirectAdapter, self).get_callback_url(request, app)
+        callback_url = base_url + '/callback/google/'
+        return callback_url
 
 
 oauth2_callback = TokenOAuth2CallbackView.adapter_view(GoogleOAuth2NoRedirectAdapter)
