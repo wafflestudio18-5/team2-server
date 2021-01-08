@@ -1,11 +1,11 @@
-from rest_framework import serializers
-from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
+from rest_framework import serializers
+from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import NotFound, PermissionDenied
 
-from .models import UserProfile, EmailAuth
 from story.models import Story
+from .models import UserProfile, EmailAuth
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -173,21 +173,40 @@ class UserLoginSerializer(serializers.ModelSerializer):
             raise NotImplementedError()
 
 
-class UserSelfSerializer(serializers.ModelSerializer):
-    name = serializers.CharField()
-    bio = serializers.CharField(required=False)
-    profile_image = serializers.URLField(required=False)
+class UserProfileSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(source='user.id', read_only=True)
+    username = serializers.CharField(source='user.username', read_only=True)
+    name = serializers.CharField(max_length=300)
+    bio = serializers.CharField(required=False, allow_blank=True, max_length=140)
+    profile_image = serializers.URLField(required=False, allow_blank=True, max_length=300)
     email = serializers.CharField(read_only=True)
-    connection = serializers.SerializerMethodField()
+    created_at = serializers.DateTimeField(format="%Y-%m-%d")
 
     class Meta:
         model = UserProfile
         fields = (
+            'id',
+            'username',
             'name',
             'bio',
             'profile_image',
             'email',
-            'connection'
+            'created_at',
+        )
+
+
+class UserSelfSerializer(UserProfileSerializer):
+    connection = serializers.SerializerMethodField()
+    class Meta:
+        model = UserProfile
+        fields = (
+            'id',
+            'username',
+            'name',
+            'bio',
+            'profile_image',
+            'email',
+            'connection',
         )
 
     def get_connection(self, user):

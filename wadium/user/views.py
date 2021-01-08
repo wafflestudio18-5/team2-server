@@ -1,26 +1,25 @@
 from django.contrib.auth import login, logout
 from django.contrib.auth.models import User
 from django.db import transaction
-from django.utils import timezone
 from django.shortcuts import get_object_or_404
-
-from .serializers import UserSerializer, UserLoginSerializer, UserSelfSerializer, UserSocialSerializer, \
-    MyStorySerializer, UserStorySerializer
-from .models import EmailAddress, EmailAuth, UserProfile
-from .permissions import UserAccessPermission
-from story.paginators import StoryPagination
-
+from django.utils import timezone
 from rest_framework import status, viewsets
-from rest_framework.response import Response
+from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.authtoken.models import Token
+from rest_framework.response import Response
+
+from story.paginators import StoryPagination
+from .models import EmailAddress, EmailAuth, UserProfile
+from .paginators import UserPagination
+from .permissions import UserAccessPermission
+from .serializers import UserSerializer, UserLoginSerializer, UserSelfSerializer, MyStorySerializer, \
+    UserStorySerializer, UserProfileSerializer
 
 
 class UserViewSet(viewsets.GenericViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    pagination_class = StoryPagination
 
     def get_permissions(self):
         if self.action == 'story':
@@ -39,8 +38,17 @@ class UserViewSet(viewsets.GenericViewSet):
                 return UserStorySerializer
         elif self.action == 'update' or self.action == 'retrieve':
             return UserSelfSerializer
+        elif self.action == 'about' or self.action == 'list':
+            return UserProfileSerializer
         else:
             return self.serializer_class
+
+    @property
+    def pagination_class(self):
+        if self.action == 'list':
+            return UserPagination
+        elif self.action == 'story':
+            return StoryPagination
 
     def create(self, request):
         serializer = self.get_serializer(data=request.data)
@@ -122,23 +130,29 @@ class UserViewSet(viewsets.GenericViewSet):
         logout(request)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def list(self, request):
+    def list(self, request, *args, **kwargs):
         username = request.query_params.get('username', '')
         if not username:
             return Response({
                 'error': 'username query is required.'
             }, status=status.HTTP_400_BAD_REQUEST)
-        users = self.get_queryset().filter(username__icontains=username).select_related('userprofile')
-        if users.count() == 0:
+
+        userprofiles = UserProfile.objects.filter(user__username__icontains=username)
+        if userprofiles.count() == 0:
             return Response(status=status.HTTP_404_NOT_FOUND)
         else:
-            return Response(self.get_serializer(users, many=True).data)
+            page = self.paginate_queryset(userprofiles)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+            return Response(self.get_serializer(userprofiles, many=True).data)
 
     @action(detail=True, methods=['GET'])
     def about(self, request, pk):
         user = request.user if pk == 'me' else self.get_object()
         if user.is_authenticated:
-            return Response(self.get_serializer(user).data)
+            profile = user.userprofile
+            return Response(self.get_serializer(profile).data)
         else:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
