@@ -26,12 +26,12 @@ class StoryViewSet(viewsets.GenericViewSet):
             return SimpleStorySerializer
         elif self.action in ('comment','comment_list'):
             return CommentSerializer
-        elif self.action in ('tag'):
+        elif self.action in ('tag', 'tag_list'):
             return TagSerializer
         return self.serializer_class
 
     def get_permissions(self):
-        if self.action in ('retrieve', 'list', 'comment_list', 'main', 'trending'):
+        if self.action in ('retrieve', 'list', 'comment_list', 'main', 'trending', 'tag_list'):
             return (AllowAny(),)
         elif self.request.method.lower() == 'options':
             return (AllowAny(),)  # Allow CORS preflight request
@@ -240,3 +240,22 @@ class StoryViewSet(viewsets.GenericViewSet):
 
             story_tag.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @tag.mapping.get
+    def tag_list(self, request, pk=None):
+        story = self.get_queryset().only('published').get(pk=pk)
+        if not story.published:
+            return Response({'error': "This story is not published yet"}, status=status.HTTP_404_NOT_FOUND)
+        
+        queryset = story.story_tag.all(). \
+            order_by('created_at'). \
+            only('tag__name')
+
+        tags = [story_tag.tag.name for story_tag in queryset]
+        data = {
+            "story_id": story.id,
+            "tags": tags
+        }
+        return Response(data)
+
+        
