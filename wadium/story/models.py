@@ -29,7 +29,10 @@ class StoryComment(models.Model):
 
 class Tag(models.Model):
     name = models.CharField(max_length=100, unique=True)
-
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    
+    def __str__(self):
+        return self.name
 
 class StoryTag(models.Model):
     story = models.ForeignKey(Story, related_name='story_tag', on_delete=models.CASCADE)
@@ -39,6 +42,8 @@ class StoryTag(models.Model):
     class Meta:
         unique_together = ['story', 'tag']
 
+    def __str__(self):
+        return f'({self.story.id}, {self.tag.name})'
 
 class StoryRead(models.Model):
     story = models.ForeignKey(Story, related_name='story_read', on_delete=models.CASCADE)

@@ -5,8 +5,8 @@ from django.utils import timezone
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.core.cache import cache
 
-from .models import Story, StoryComment, StoryRead, StoryTag
-from .serializers import StorySerializer, SimpleStorySerializer, CommentSerializer
+from .models import Story, StoryComment, StoryRead, StoryTag, Tag
+from .serializers import StorySerializer, SimpleStorySerializer, CommentSerializer, TagSerializer
 from .paginators import StoryPagination, CommentPagination
 
 
@@ -26,10 +26,12 @@ class StoryViewSet(viewsets.GenericViewSet):
             return SimpleStorySerializer
         elif self.action in ('comment','comment_list'):
             return CommentSerializer
+        elif self.action in ('tag', 'tag_list'):
+            return TagSerializer
         return self.serializer_class
 
     def get_permissions(self):
-        if self.action in ('retrieve', 'list', 'comment_list', 'main', 'trending'):
+        if self.action in ('retrieve', 'list', 'comment_list', 'main', 'trending', 'tag_list'):
             return (AllowAny(),)
         elif self.request.method.lower() == 'options':
             return (AllowAny(),)  # Allow CORS preflight request
@@ -172,11 +174,11 @@ class StoryViewSet(viewsets.GenericViewSet):
 
         else: # When method is PUT or DELETE
             if 'id' not in request.query_params:
-                return Response({'error': "comment id is required"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': "Comment id is required"}, status=status.HTTP_400_BAD_REQUEST)
             try:
                 comment = story.comments.get(id=request.query_params.get('id'))
             except StoryComment.DoesNotExist:
-                return Response({'error': "Comments with this id do not exist in this story."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': "Comment with this id do not exist in this story."}, status=status.HTTP_400_BAD_REQUEST)
             if comment.writer != request.user:
                 return Response({'error': "This is not your comment"}, status=status.HTTP_403_FORBIDDEN)
 
@@ -206,3 +208,54 @@ class StoryViewSet(viewsets.GenericViewSet):
         assert page is not None
         serializer = self.get_serializer(page, many=True)
         return self.get_paginated_response(serializer.data)
+
+    @action(methods=['POST', 'DELETE'], detail=True)
+    def tag(self, request, pk=None):
+        if pk is None:
+            return Response({'error': "Primary key is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        story = self.get_object()
+        if story.writer != request.user:
+                return Response({'error': "This is not your story"}, status=status.HTTP_403_FORBIDDEN)
+
+        if request.method == 'POST':
+            tag_name = request.data.get('tag_name')
+            if tag_name is None or '':
+                return Response({'error': "Tag name is required"}, status=status.HTTP_400_BAD_REQUEST)
+            if not story.story_tag.filter(tag__name=tag_name).exists():
+                tag, created = Tag.objects.get_or_create(name=tag_name)
+                serializer = TagSerializer(data=request.data, context={'story': story, 'tag': tag})
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response({'error': "This tag already exists"}, status=status.HTTP_400_BAD_REQUEST)
+
+        elif request.method == 'DELETE': # When method is DELETE
+            if 'tag' not in request.query_params:
+                return Response({'error': "Tag name is required"}, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                story_tag = story.story_tag.get(tag__name=request.query_params.get('tag'))
+            except StoryTag.DoesNotExist:
+                return Response({'error': "This tag does not exist in this story."}, status=status.HTTP_400_BAD_REQUEST)
+
+            story_tag.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @tag.mapping.get
+    def tag_list(self, request, pk=None):
+        story = self.get_queryset().only('published').get(pk=pk)
+        if not story.published:
+            return Response({'error': "This story is not published yet"}, status=status.HTTP_404_NOT_FOUND)
+        
+        queryset = story.story_tag.all(). \
+            order_by('created_at'). \
+            only('tag__name')
+
+        tags = [story_tag.tag.name for story_tag in queryset]
+        data = {
+            "story_id": story.id,
+            "tags": tags
+        }
+        return Response(data)
+
+        
